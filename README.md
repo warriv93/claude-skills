@@ -15,9 +15,9 @@ Running Claude Code exposes a file as a **skill** when it's under `~/.claude/ski
 a **slash command** when it's under `~/.claude/commands/`, so we link into both.
 
 ```bash
-git clone https://github.com/warriv93/claude-skills.git ~/dev/claude-skills
+git clone https://github.com/warriv93/claude-skills.git "$HOME/Library/CloudStorage/SynologyDrive-1/aiDir/claude-skills"
 
-for f in ~/dev/claude-skills/skills/*.md; do
+for f in "$HOME"/Library/CloudStorage/SynologyDrive-1/aiDir/claude-skills/skills/*.md; do
   name="$(basename "$f")"
   ln -sf "$f" "$HOME/.claude/skills/$name"
   ln -sf "$f" "$HOME/.claude/commands/$name"

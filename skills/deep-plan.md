@@ -14,9 +14,21 @@ Do **not** call any paid external LLM/API service. Everything here is free. When
 delegate to subagents, prefer the **cheapest capable model** (e.g. Haiku) for
 well-scoped, context-isolated work; reserve the strong model for architecture and review.
 
-This skill is an **orchestrator**. It adds the parts that pure SDD/TDD tooling lacks
-(the grilling interview, upfront research, cheap-subagent slicing, human review) and then
-**calls the `speckit-custom-plan-tdd-sdd` skill** to run the actual SDD+TDD engine.
+This skill is an **orchestrator** that composes other installed skills rather than
+re-implementing them. It adds the connective tissue (cheap-subagent slicing, the commit /
+verification / HITL loop) and delegates the heavy lifting to purpose-built skills:
+
+| Job | Skill it calls |
+|-----|----------------|
+| Grill the spec + build the domain model | `/grill-with-docs` (runs `/grilling` + `/domain-modeling`) |
+| Research unknowns against primary sources | `/research` |
+| Deep-modular architecture vocabulary | `/codebase-design` |
+| The full SDD+TDD spec→plan→tasks engine | `speckit-custom-plan-tdd-sdd` |
+| Red→green→refactor discipline per slice | `/tdd` |
+| Diagnose failures in the verification loop | `/diagnosing-bugs` |
+
+If any skill above isn't installed, do that phase's work inline instead — never block on a
+missing skill, and never install/pay for anything.
 
 Execute the phases in order. Do not skip ahead. Each phase gates the next.
 
@@ -29,8 +41,13 @@ agreeable. Interrogate assumptions. You are not done until you could hand the sp
 stranger and get back the thing the user actually wants.
 
 1. Restate the request in your own words and list what you believe the objective is.
-2. **Interview / grill the user.** Ask focused questions — a few at a time, not a wall —
-   covering:
+2. **Run the `/grill-with-docs` skill** to drive the interrogation. It runs a `/grilling`
+   session (relentless, one question at a time, with your recommended answer for each) while
+   `/domain-modeling` captures the ubiquitous language and any ADRs into `CONTEXT.md` /
+   `docs/adr/` as decisions crystallise. If `/grill-with-docs` isn't installed, grill inline
+   instead. Either way, keep going until there are **zero blocking ambiguities**; where the
+   user is unsure, propose a sensible default, state it explicitly, and get a yes/no.
+   The grilling must cover:
    - **Objectives & success criteria** — what does "done" measurably look like?
    - **Users & primary flows** — who uses it, what are the P1/P2/P3 journeys?
    - **Scope boundaries** — explicit non-goals and out-of-scope items.
@@ -39,15 +56,11 @@ stranger and get back the thing the user actually wants.
    - **Interfaces & dependencies** — external services, APIs, schemas, auth.
    - **Edge cases & failure modes** — what must never happen; how errors are handled.
    - **Unknowns** — anything you're guessing at. Force a decision or a documented default.
-   Keep grilling until there are **zero blocking ambiguities**. Where the user is unsure,
-   propose a sensible default, state it explicitly, and get a yes/no.
-3. **Optional research boosters (only if available — never install/pay):**
-   - If the `openspec` CLI exists (`which openspec`), use `openspec explore` to surface
-     spec structure and gaps for this problem domain.
-   - If a `grill-with-docs` skill/command is installed (Matt Pocock's docs-grounded
-     interrogation), invoke it to pressure-test the design against real library docs.
-   - If neither is present, skip silently and do the grounding yourself from local docs
-     and the codebase. Do not block on these.
+3. **Resolve factual unknowns with `/research`.** When a question is a *fact* (library
+   behavior, API shape, existing code) rather than a *decision*, run the `/research` skill
+   to investigate primary sources and capture findings in the repo — don't make the user
+   answer what you can look up. *(Optional: if the `openspec` CLI exists — `which openspec` —
+   `openspec explore` can surface spec structure/gaps too. Never install or pay for it.)*
 4. Produce a short **Spec Brief**: objectives, features, constraints, non-goals, open
    decisions (now resolved), and success criteria. Get explicit user sign-off on the Brief
    before Phase 1. **Do not proceed without confirmation.**
@@ -56,9 +69,12 @@ stranger and get back the thing the user actually wants.
 
 ## Phase 1 — Deep modular architecture
 
-Before any tasks, design for **testability, robustness, and understandability**:
+**Run the `/codebase-design` skill** and use its deep-module vocabulary and principles as
+the basis for this phase (fall back to the principles below if it isn't installed). The aim
+is a lot of behaviour behind small interfaces, placed at clean seams, testable through those
+interfaces — designed for **testability, robustness, and understandability**:
 
-- Decompose into small modules with single responsibilities and narrow, explicit
+- Decompose into deep modules with single responsibilities and narrow, explicit
   interfaces (accept interfaces / return concretes; keep interfaces 1–3 methods).
 - Push dependencies to the edges; inject them via constructors so the core is pure and
   unit-testable without mocks-of-mocks.
@@ -67,7 +83,9 @@ Before any tasks, design for **testability, robustness, and understandability**:
 - Note where a cheap subagent can own a whole module vs. where cross-cutting design needs
   the strong model.
 
-Capture this as an architecture sketch feeding directly into the spec/plan.
+Reuse the `CONTEXT.md` / ADRs that `/domain-modeling` produced in Phase 0 so names and
+seams speak the project's language. Capture the result as an architecture sketch feeding
+directly into the spec/plan.
 
 ---
 
@@ -89,6 +107,9 @@ Phases 0–1:
 
 If speckit is somehow unavailable, fall back to running the equivalent SDD+TDD steps
 inline — but the preferred path is to call the skill so there is no duplication.
+*(Lightweight alternative when full speckit is overkill: `/to-spec` to synthesize a spec
+from this conversation and `/to-tickets` to break it into tracer-bullet slices. These need
+`/setup-matt-pocock-skills` run once to know your issue tracker.)*
 
 ---
 
@@ -101,8 +122,9 @@ run by a **subagent with no prior conversation context** — maximizing token ef
   interfaces, acceptance tests). No hidden context.
 - Dispatch each independent, well-scoped slice to a **cheap-model subagent** (e.g. Haiku).
   Keep architecture/integration decisions on the strong model.
-- Enforce TDD inside each slice: write the failing tests first (RED), implement the minimum
-  to pass (GREEN), refactor (IMPROVE).
+- Enforce TDD inside each slice using the `/tdd` skill's discipline: write the failing tests
+  first (RED), implement the minimum to pass (GREEN), refactor (IMPROVE). Give each isolated
+  subagent the instruction to follow `/tdd` so tests are worth keeping, not just green.
 - **After a slice passes all its tests, commit it individually** on the feature branch with
   a clear conventional-commit message. One passing slice = one commit.
 - Halt on any non-parallel failure; fix before moving on. Never commit red.
@@ -116,7 +138,9 @@ A dedicated final verification gate:
 1. Run the full test suite plus **e2e / integration tests** appropriate to the stack
    (Playwright for web flows; equivalent otherwise) to validate the implementation
    **against the spec**, not just against the unit tests.
-2. If anything fails or a requirement is unmet, loop back: fix, re-test, re-commit.
+2. If anything fails or a requirement is unmet, loop back: fix, re-test, re-commit. For any
+   hard failure or performance regression, **run the `/diagnosing-bugs` skill** to run a
+   disciplined diagnosis loop instead of guessing.
 3. **Keep looping** until every success criterion in the Spec Brief and every acceptance
    scenario passes. Only then is the feature "done".
 
@@ -141,6 +165,8 @@ End by asking the user how they want to proceed (merge, iterate, or park).
 
 - Free only: no paid API/LLM calls at any point.
 - Never write code before the Spec Brief is signed off (Phase 0) and tasks exist (Phase 2).
-- Prefer calling `speckit-custom-plan-tdd-sdd` over reimplementing SDD/TDD logic.
+- Compose, don't reimplement: prefer the mapped skills (`/grill-with-docs`, `/research`,
+  `/codebase-design`, `speckit-custom-plan-tdd-sdd`, `/tdd`, `/diagnosing-bugs`) over
+  redoing their work inline; fall back to inline only when one isn't installed.
 - One commit per passing slice; never commit failing tests.
 - Prefer the cheapest capable model for isolated slices; strong model for design + review.

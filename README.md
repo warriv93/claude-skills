@@ -4,8 +4,8 @@ Personal [Claude Code](https://claude.com/claude-code) skills / slash commands, 
 
 ## Skills
 
-| Skill | What it does |
-|-------|--------------|
+| Skill                               | What it does                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`/deep-plan`](skills/deep-plan.md) | Front-door orchestrator: **grills** you to lock the spec, designs a deep-modular architecture, then drives spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases run by cheap subagents, one commit per passing slice, a looping verification gate, and a final human-in-the-loop review. Free — no paid API calls. Calls the `speckit-custom-plan-tdd-sdd` skill for the SDD+TDD engine. |
 
 ## Install (symlink — live editing)
@@ -46,7 +46,8 @@ template:
 
 ```markdown
 ---
-description: One or two sentences describing WHAT the skill does and WHEN to use it. This
+description:
+  One or two sentences describing WHAT the skill does and WHEN to use it. This
   text is how Claude decides to auto-trigger the skill, so include the trigger phrases /
   slash-command name and the kind of request it handles.
 argument-hint: <what to type after the command, e.g. a description or path>
@@ -57,10 +58,12 @@ argument-hint: <what to type after the command, e.g. a description or path>
 Instructions to Claude, written as if briefing an engineer. Be explicit and ordered.
 
 ## Step 1 — ...
+
 ## Step 2 — ...
 ```
 
 Guidelines:
+
 - **`description:`** is the most important line — it drives both discovery in the skill list
   and auto-triggering. Name the `/command` and the situations it applies to.
 - **`argument-hint:`** is optional; it shows a placeholder when you type the command.

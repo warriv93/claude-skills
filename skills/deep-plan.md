@@ -18,14 +18,14 @@ This skill is an **orchestrator** that composes other installed skills rather th
 re-implementing them. It adds the connective tissue (cheap-subagent slicing, the commit /
 verification / HITL loop) and delegates the heavy lifting to purpose-built skills:
 
-| Job | Skill it calls |
-|-----|----------------|
-| Grill the spec + build the domain model | `/grill-with-docs` (runs `/grilling` + `/domain-modeling`) |
-| Research unknowns against primary sources | `/research` |
-| Deep-modular architecture vocabulary | `/codebase-design` |
-| The full SDD+TDD spec→plan→tasks engine | `speckit-custom-plan-tdd-sdd` |
-| Red→green→refactor discipline per slice | `/tdd` |
-| Diagnose failures in the verification loop | `/diagnosing-bugs` |
+| Job                                        | Skill it calls                                             |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| Grill the spec + build the domain model    | `/grill-with-docs` (runs `/grilling` + `/domain-modeling`) |
+| Research unknowns against primary sources  | `/research`                                                |
+| Deep-modular architecture vocabulary       | `/codebase-design`                                         |
+| The full SDD+TDD spec→plan→tasks engine    | `speckit-custom-plan-tdd-sdd`                              |
+| Red→green→refactor discipline per slice    | `/tdd`                                                     |
+| Diagnose failures in the verification loop | `/diagnosing-bugs`                                         |
 
 If any skill above isn't installed, do that phase's work inline instead — never block on a
 missing skill, and never install/pay for anything.
@@ -56,11 +56,11 @@ stranger and get back the thing the user actually wants.
    - **Interfaces & dependencies** — external services, APIs, schemas, auth.
    - **Edge cases & failure modes** — what must never happen; how errors are handled.
    - **Unknowns** — anything you're guessing at. Force a decision or a documented default.
-3. **Resolve factual unknowns with `/research`.** When a question is a *fact* (library
-   behavior, API shape, existing code) rather than a *decision*, run the `/research` skill
+3. **Resolve factual unknowns with `/research`.** When a question is a _fact_ (library
+   behavior, API shape, existing code) rather than a _decision_, run the `/research` skill
    to investigate primary sources and capture findings in the repo — don't make the user
-   answer what you can look up. *(Optional: if the `openspec` CLI exists — `which openspec` —
-   `openspec explore` can surface spec structure/gaps too. Never install or pay for it.)*
+   answer what you can look up. _(Optional: if the `openspec` CLI exists — `which openspec` —
+   `openspec explore` can surface spec structure/gaps too. Never install or pay for it.)_
 4. Produce a short **Spec Brief**: objectives, features, constraints, non-goals, open
    decisions (now resolved), and success criteria. Get explicit user sign-off on the Brief
    before Phase 1. **Do not proceed without confirmation.**
@@ -107,9 +107,9 @@ Phases 0–1:
 
 If speckit is somehow unavailable, fall back to running the equivalent SDD+TDD steps
 inline — but the preferred path is to call the skill so there is no duplication.
-*(Lightweight alternative when full speckit is overkill: `/to-spec` to synthesize a spec
+_(Lightweight alternative when full speckit is overkill: `/to-spec` to synthesize a spec
 from this conversation and `/to-tickets` to break it into tracer-bullet slices. These need
-`/setup-matt-pocock-skills` run once to know your issue tracker.)*
+`/setup-matt-pocock-skills` run once to know your issue tracker.)_
 
 ---
 

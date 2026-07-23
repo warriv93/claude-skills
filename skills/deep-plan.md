@@ -32,6 +32,8 @@ missing skill, and never install/pay for anything.
 
 Execute the phases in order. Do not skip ahead. Each phase gates the next.
 
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
 ---
 
 ## Phase 0 — Grill the user until the spec is unambiguous

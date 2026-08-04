@@ -1,9 +1,9 @@
 ---
-description: Front-door orchestrator for building a feature the right way. First GRILLS the user with an interview to lock the specification, then drives deep-modular, spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases runnable by cheap subagents, one commit per passing phase, a looping verification gate, and a final human-in-the-loop review. Free — no paid API/LLM calls. Use when the user says "plan and build feature X", "/deep-plan", or wants a rigorous end-to-end plan+build.
+description: Front-door orchestrator for building a feature the right way. First GRILLS the user with an interview to lock the specification, then — for anything with a UI — puts a throwaway clickable mock in front of them to react to before any architecture is committed, then drives deep-modular, spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases runnable by cheap subagents, one commit per passing phase, a looping verification gate, and a final human-in-the-loop review. Free — no paid API/LLM calls. Use when the user says "plan and build feature X", "/deep-plan", or wants a rigorous end-to-end plan+build.
 argument-hint: <feature or project description>
 ---
 
-# /deep-plan — Grill → Spec → Deep-Modular SDD+TDD → Verify → HITL Review
+# /deep-plan — Grill → Mock → Spec → Deep-Modular SDD+TDD → Verify → HITL Review
 
 You are an AI software engineer. Your job is to take a feature/project idea and drive it
 to a **verified, spec-conformant implementation** — built with deep modular architecture,
@@ -22,6 +22,7 @@ verification / HITL loop) and delegates the heavy lifting to purpose-built skill
 | ------------------------------------------ | ---------------------------------------------------------- |
 | Grill the spec + build the domain model    | `/grill-with-docs` (runs `/grilling` + `/domain-modeling`) |
 | Research unknowns against primary sources  | `/research`                                                |
+| Throwaway UI mock for the user to react to | `/prototype` + `frontend-design` (+ `dataviz` for charts)  |
 | Deep-modular architecture vocabulary       | `/codebase-design`                                         |
 | The full SDD+TDD spec→plan→tasks engine    | `speckit-custom-plan-tdd-sdd`                              |
 | Red→green→refactor discipline per slice    | `/tdd`                                                     |
@@ -69,6 +70,44 @@ stranger and get back the thing the user actually wants.
 
 ---
 
+## Phase 0.5 — Mock the UI (frontend work only)
+
+**Applies when** the feature has any user-facing interface — web, mobile, desktop, browser
+extension, or a TUI with real layout. **Skip** for pure backend / CLI / library / data work:
+say "no UI surface — skipping mock" in one line and go to Phase 1. Words are a terrible
+medium for arguing about a screen; put a thing in front of the user instead.
+
+1. **Build a throwaway mock** of the P1 flows agreed in Phase 0. **Run the `/prototype`
+   skill** (it exists exactly for "explore what a UI should look like") and pull visual
+   quality from the **`frontend-design`** skill; use **`dataviz`** for any chart, dashboard,
+   or stat tile. If those aren't installed, hand-roll a single self-contained HTML file.
+   - Static and fake: hardcoded data, no backend, no auth, no real API calls.
+   - Cover every P1 screen **plus the states that get forgotten** — empty, loading, error,
+     permission-denied, long-content overflow, and mobile width.
+   - Clickable where the flow matters (screen → screen), so the user can walk the journey.
+   - Throwaway means throwaway. This code is **not** the implementation and must never be
+     promoted into it; Phases 2–3 rebuild for real, test-first.
+2. **Put it in front of the user.** Publish the mock with the **Artifact** tool (private
+   page, real URL, works on their phone) — or run it locally via the `/run` skill if the
+   stack demands it. A file path they have to open themselves is not good enough.
+3. **Drive the discussion.** Walk it screen by screen and interrogate, same posture as the
+   grill — don't just ask "looks good?". Push on:
+   - Information hierarchy — is the most important thing on each screen actually the biggest?
+   - Flow — where does the journey take more steps than the user expected?
+   - Naming — do the labels match the ubiquitous language in `CONTEXT.md`?
+   - Missing screens/states you had to invent, and the ones they hadn't thought about.
+   - What can be **cut** — a mock is the cheapest place to discover a non-goal.
+4. **Iterate on the same Artifact URL** until the user signs off. Every round trip here is
+   orders of magnitude cheaper than one in Phase 3.
+5. **Fold the outcome back into the spec.** Amend the Spec Brief and `CONTEXT.md` / ADRs with
+   what the mock settled: screen inventory, states, flows, terminology, newly-agreed
+   non-goals. Keep the mock URL as the visual reference for Phases 1–3.
+
+**Gate:** no Phase 1 until the user has signed off on the mock. **Do not proceed without
+confirmation.**
+
+---
+
 ## Phase 1 — Deep modular architecture
 
 **Run the `/codebase-design` skill** and use its deep-module vocabulary and principles as
@@ -86,16 +125,18 @@ interfaces — designed for **testability, robustness, and understandability**:
   the strong model.
 
 Reuse the `CONTEXT.md` / ADRs that `/domain-modeling` produced in Phase 0 so names and
-seams speak the project's language. Capture the result as an architecture sketch feeding
-directly into the spec/plan.
+seams speak the project's language. If Phase 0.5 ran, treat the signed-off mock as the
+authority on screens, states, and flows — derive the view/state seams from it, and keep
+rendering at the edge so the core stays pure. Capture the result as an architecture sketch
+feeding directly into the spec/plan.
 
 ---
 
 ## Phase 2 — Hand off to the SDD+TDD engine (call the speckit skill)
 
 Invoke the **`speckit-custom-plan-tdd-sdd`** skill (via the Skill tool) and drive its
-nine-command workflow, seeding it with the signed-off Spec Brief and architecture from
-Phases 0–1:
+nine-command workflow, seeding it with the signed-off Spec Brief, the approved mock (if
+any), and the architecture from Phases 0–1:
 
 1. `/speckit.constitution` — ensure the constitution declares **test-first (TDD)** and
    **spec-first (SDD)** as non-negotiable (add deep-modularity + cost-discipline principles).
@@ -139,7 +180,8 @@ A dedicated final verification gate:
 
 1. Run the full test suite plus **e2e / integration tests** appropriate to the stack
    (Playwright for web flows; equivalent otherwise) to validate the implementation
-   **against the spec**, not just against the unit tests.
+   **against the spec**, not just against the unit tests. For UI work, also check the built
+   screens against the approved mock — every screen and state it promised must exist.
 2. If anything fails or a requirement is unmet, loop back: fix, re-test, re-commit. For any
    hard failure or performance regression, **run the `/diagnosing-bugs` skill** to run a
    disciplined diagnosis loop instead of guessing.
@@ -166,9 +208,12 @@ End by asking the user how they want to proceed (merge, iterate, or park).
 ## Guardrails
 
 - Free only: no paid API/LLM calls at any point.
-- Never write code before the Spec Brief is signed off (Phase 0) and tasks exist (Phase 2).
+- Never write production code before the Spec Brief is signed off (Phase 0), the mock is
+  approved if there's a UI (Phase 0.5), and tasks exist (Phase 2). The Phase 0.5 mock is the
+  one exception — it's throwaway, and it never gets promoted into the implementation.
 - Compose, don't reimplement: prefer the mapped skills (`/grill-with-docs`, `/research`,
-  `/codebase-design`, `speckit-custom-plan-tdd-sdd`, `/tdd`, `/diagnosing-bugs`) over
-  redoing their work inline; fall back to inline only when one isn't installed.
+  `/prototype`, `frontend-design`, `/codebase-design`, `speckit-custom-plan-tdd-sdd`,
+  `/tdd`, `/diagnosing-bugs`) over redoing their work inline; fall back to inline only when
+  one isn't installed.
 - One commit per passing slice; never commit failing tests.
 - Prefer the cheapest capable model for isolated slices; strong model for design + review.

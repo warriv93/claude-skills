@@ -4,9 +4,9 @@ Personal [Claude Code](https://claude.com/claude-code) skills / slash commands, 
 
 ## Skills
 
-| Skill                               | What it does                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`/deep-plan`](skills/deep-plan.md) | Front-door orchestrator: **grills** you to lock the spec, designs a deep-modular architecture, then drives spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases run by cheap subagents, one commit per passing slice, a looping verification gate, and a final human-in-the-loop review. Free — no paid API calls. Calls the `speckit-custom-plan-tdd-sdd` skill for the SDD+TDD engine. |
+| Skill                               | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`/deep-plan`](skills/deep-plan.md) | Front-door orchestrator: **grills** you to lock the spec, puts a throwaway clickable **mock** in front of you for any UI work, designs a deep-modular architecture, then drives spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases run by cheap subagents, one commit per passing slice, a looping verification gate, and a final human-in-the-loop review. Free — no paid API calls. Calls the `speckit-custom-plan-tdd-sdd` skill for the SDD+TDD engine. |
 
 ## Install (symlink — live editing)
 
@@ -113,5 +113,6 @@ NAS (handy for backup). If Synology ever leaves a conflict copy like
 ## Dependencies
 
 - **`/deep-plan`** calls the **`speckit-custom-plan-tdd-sdd`** skill for the SDD+TDD engine.
-  Optional (used only if present): the `openspec` CLI and a `grill-with-docs` skill — the
-  workflow degrades gracefully when they're absent.
+  Optional (used only if present): the `openspec` CLI, a `grill-with-docs` skill, and
+  `prototype` / `frontend-design` / `dataviz` for the Phase 0.5 UI mock — the workflow
+  degrades gracefully when they're absent.

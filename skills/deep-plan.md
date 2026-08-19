@@ -1,9 +1,9 @@
 ---
-description: Front-door orchestrator for building a feature the right way. First GRILLS the user with an interview to lock the specification, then — for anything with a UI — puts a throwaway clickable mock in front of them to react to before any architecture is committed, then drives deep-modular, spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases runnable by cheap subagents, one commit per passing phase, a looping verification gate, and a final human-in-the-loop review. Free — no paid API/LLM calls. Use when the user says "plan and build feature X", "/deep-plan", or wants a rigorous end-to-end plan+build.
+description: Front-door orchestrator for building a feature the right way. Reads the existing codebase first (and charts huge work with /wayfinder), then GRILLS the user with an interview to lock the specification, then — for anything with a UI — puts a throwaway clickable mock in front of them to react to before any architecture is committed, then drives deep-modular, spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases runnable by cheap subagents, one commit per passing phase, dual-axis code-quality gates that hunt anti-patterns, a budgeted verification loop with security and real-app checks, and a final human-in-the-loop review before landing the docs and PR. Resumable across sessions. Free — no paid API/LLM calls. Use when the user says "plan and build feature X", "/deep-plan", or wants a rigorous end-to-end plan+build.
 argument-hint: <feature or project description>
 ---
 
-# /deep-plan — Grill → Mock → Spec → Deep-Modular SDD+TDD → Verify → HITL Review
+# /deep-plan — Recon → Grill → Mock → Spec → SDD+TDD → Review → Verify → Review → HITL → Land
 
 You are an AI software engineer. Your job is to take a feature/project idea and drive it
 to a **verified, spec-conformant implementation** — built with deep modular architecture,
@@ -15,17 +15,23 @@ delegate to subagents, prefer the **cheapest capable model** (e.g. Haiku) for
 well-scoped, context-isolated work; reserve the strong model for architecture and review.
 
 This skill is an **orchestrator** that composes other installed skills rather than
-re-implementing them. It adds the connective tissue (cheap-subagent slicing, the commit /
-verification / HITL loop) and delegates the heavy lifting to purpose-built skills:
+re-implementing them. It adds the connective tissue (cheap-subagent slicing, the ledger,
+the commit / verification / HITL loop) and delegates the heavy lifting:
 
 | Job                                        | Skill it calls                                             |
 | ------------------------------------------ | ---------------------------------------------------------- |
+| Chart work too big for one session         | `/wayfinder` (Phase R)                                     |
 | Grill the spec + build the domain model    | `/grill-with-docs` (runs `/grilling` + `/domain-modeling`) |
 | Research unknowns against primary sources  | `/research`                                                |
 | Throwaway UI mock for the user to react to | `/prototype` + `frontend-design` (+ `dataviz` for charts)  |
 | Deep-modular architecture vocabulary       | `/codebase-design`                                         |
+| Tooling-enforced quality on a new repo     | `/setup-pre-commit`, `git-guardrails-claude-code`          |
 | The full SDD+TDD spec→plan→tasks engine    | `speckit-custom-plan-tdd-sdd`                              |
 | Red→green→refactor discipline per slice    | `/tdd`                                                     |
+| Code quality gate (anti-patterns + spec)   | Matt Pocock's `code-review` (see Phase 3 gate)             |
+| Cheap cleanup pass                         | `/simplify`                                                |
+| Security pass                              | `/security-review`                                         |
+| Drive the real app and look at it          | `/run`                                                     |
 | Diagnose failures in the verification loop | `/diagnosing-bugs`                                         |
 
 If any skill above isn't installed, do that phase's work inline instead — never block on a
@@ -34,6 +40,78 @@ missing skill, and never install/pay for anything.
 Execute the phases in order. Do not skip ahead. Each phase gates the next.
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
+
+---
+
+## The run ledger — `.deep-plan/state.md`
+
+A full run outlives a context window. Compaction, a crash, or tomorrow morning must not
+lose the thread. **First action of every invocation:** read `.deep-plan/state.md`.
+
+- **It exists** → summarise where the run stopped, confirm with the user, resume at the
+  first incomplete phase. Do **not** restart from Phase R.
+- **It doesn't** → create it, then start at Phase R.
+
+Rewrite it at every phase boundary and every gate — before the phase's work, not after
+you've forgotten. Keep it under a page; it is a ledger, not a diary.
+
+```markdown
+# deep-plan: <feature>
+
+Branch: <feature branch> | Started: <date> | Phase: <current> | Status: <in progress|blocked|done>
+
+## Verification contract (Phase 1 — the definition of green)
+
+test: <cmd> | typecheck: <cmd> | lint: <cmd> | build: <cmd> | e2e: <cmd>
+
+## Artifacts
+
+Spec Brief: <path> | spec.md: <path> | tasks.md: <path> | Mock: <URL> | Recon Note: <path>
+
+## Phases
+
+- [x] R recon — <one line>
+- [ ] 0 grill … (one line each through Phase 6)
+
+## Slices (Phase 3)
+
+- [x] <slice> — <commit sha>
+
+## Open findings / deferred
+
+- <finding> — <why deferred>
+
+## Loop budget
+
+Phase 4 attempts on current failure: <n>/3
+```
+
+---
+
+## Phase R — Recon (before you grill)
+
+Never ask the user what the repository can already tell you, and never let a cheap
+subagent reinvent a module that already exists.
+
+1. **Read the ground.** `CLAUDE.md` and `~/.claude/rules`, `README`, `CONTEXT.md`, ADRs,
+   package manifests + lockfile, directory layout, the test setup, CI config. Fan the
+   search out to a cheap **`Explore`** subagent; you want conclusions, not file dumps.
+2. **Write a Recon Note** (≤1 page, into `.deep-plan/`): stack and versions; the module
+   map; the **reuse list** — existing utilities, components, services and patterns this
+   feature must use instead of rebuilding; naming and layering conventions; danger zones
+   (untested code, known-fragile areas, generated files). This note is quoted into Phase 3
+   subagent prompts, so write it for a stranger.
+3. **Greenfield?** Say "greenfield — no prior art" in one line and move on; the stack
+   decision belongs to the grill.
+4. **Size the work.** If the effort is too big for one agent session — many unknowns, the
+   route to the destination genuinely foggy, multi-week scope — **run `/wayfinder`** to
+   chart it as a map of investigation tickets on the repo's issue tracker and resolve them
+   one at a time until the way is clear. Each resolved ticket feeds Phase 0; re-enter
+   `/deep-plan` per buildable chunk the map exposes. (`/wayfinder` wants an issue tracker —
+   `/setup-matt-pocock-skills` once, else it falls back to local markdown.) If the work
+   fits one run, say so and go straight to Phase 0.
+5. Carry the Recon Note into the grill: every question it already answers is a question
+   you do not ask.
 
 ---
 
@@ -108,7 +186,7 @@ confirmation.**
 
 ---
 
-## Phase 1 — Deep modular architecture
+## Phase 1 — Deep modular architecture + the verification contract
 
 **Run the `/codebase-design` skill** and use its deep-module vocabulary and principles as
 the basis for this phase (fall back to the principles below if it isn't installed). The aim
@@ -124,11 +202,21 @@ interfaces — designed for **testability, robustness, and understandability**:
 - Note where a cheap subagent can own a whole module vs. where cross-cutting design needs
   the strong model.
 
-Reuse the `CONTEXT.md` / ADRs that `/domain-modeling` produced in Phase 0 so names and
-seams speak the project's language. If Phase 0.5 ran, treat the signed-off mock as the
-authority on screens, states, and flows — derive the view/state seams from it, and keep
-rendering at the edge so the core stays pure. Capture the result as an architecture sketch
-feeding directly into the spec/plan.
+Reuse the `CONTEXT.md` / ADRs that `/domain-modeling` produced in Phase 0, and the reuse
+list from the Recon Note, so names and seams speak the project's language. If Phase 0.5 ran,
+treat the signed-off mock as the authority on screens, states, and flows — derive the
+view/state seams from it, and keep rendering at the edge so the core stays pure. Capture the
+result as an architecture sketch feeding directly into the spec/plan.
+
+**Then pin the verification contract.** "Run the tests" is folklore; subagents need literal
+commands. Write the exact invocations into the ledger — install, test, single-test-file,
+typecheck, lint, format, build, e2e — and **run each one now** to prove it works on a clean
+tree. From here on, **green means every contract command exits 0**, nothing looser, and the
+contract block is quoted verbatim into every Phase 3 subagent prompt.
+
+Greenfield or a repo missing pieces: create them before Phase 2, and make the tooling
+enforce quality rather than the model remembering to — **`/setup-pre-commit`** (lint-staged,
+typecheck, tests on commit) and **`git-guardrails-claude-code`** (blocks destructive git).
 
 ---
 
@@ -136,7 +224,7 @@ feeding directly into the spec/plan.
 
 Invoke the **`speckit-custom-plan-tdd-sdd`** skill (via the Skill tool) and drive its
 nine-command workflow, seeding it with the signed-off Spec Brief, the approved mock (if
-any), and the architecture from Phases 0–1:
+any), and the architecture from Phases R–1:
 
 1. `/speckit.constitution` — ensure the constitution declares **test-first (TDD)** and
    **spec-first (SDD)** as non-negotiable (add deep-modularity + cost-discipline principles).
@@ -161,32 +249,75 @@ from this conversation and `/to-tickets` to break it into tracer-bullet slices. 
 Execute `tasks.md` **phase by phase / slice by slice**, engineered so each slice can be
 run by a **subagent with no prior conversation context** — maximizing token efficiency:
 
-- Each slice's task text carries everything the subagent needs (exact file paths,
-  interfaces, acceptance tests). No hidden context.
+- Each slice's task text carries everything the subagent needs: exact file paths,
+  interfaces, acceptance tests, the **verification contract**, and the Recon Note's reuse
+  list. No hidden context.
 - Dispatch each independent, well-scoped slice to a **cheap-model subagent** (e.g. Haiku).
   Keep architecture/integration decisions on the strong model.
 - Enforce TDD inside each slice using the `/tdd` skill's discipline: write the failing tests
   first (RED), implement the minimum to pass (GREEN), refactor (IMPROVE). Give each isolated
   subagent the instruction to follow `/tdd` so tests are worth keeping, not just green.
 - **After a slice passes all its tests, commit it individually** on the feature branch with
-  a clear conventional-commit message. One passing slice = one commit.
+  a clear conventional-commit message. One passing slice = one commit. Tick it in the ledger.
 - Halt on any non-parallel failure; fix before moving on. Never commit red.
+
+**Last step of Phase 3 — code quality gate.** All slices committed and green ≠ done. Review
+the whole feature diff for anti-patterns and standards drift before Phase 4:
+
+1. **Run Matt Pocock's dual-axis `code-review` skill** — Standards (repo standards + the
+   Fowler code-smell baseline) and Spec (does the diff do what `spec.md` asked?), as two
+   parallel sub-agents. Resolution order:
+   - the `code-review` skill if installed → else read and follow
+     `~/.claude/vendor/mattpocock-skills/skills/engineering/code-review/SKILL.md` → else
+     fetch `github.com/mattpocock/skills`, `skills/engineering/code-review/SKILL.md`.
+   - **Not** the built-in `/code-review ultra` — that is billed and breaks cost discipline.
+2. Fixed point = the branch point (`git merge-base main HEAD`, i.e. the commit before slice 1).
+   Spec axis ← `spec.md` + Spec Brief. Standards axis ← `CONTEXT.md`, ADRs, the Recon Note's
+   conventions, and any `CODING_STANDARDS.md` / `CONTRIBUTING.md` / rules files in the repo.
+3. **Fix what it finds:** every hard standards violation, every missing/partial spec
+   requirement, every scope-creep addition, and every judgement-call smell you agree with.
+   Refactor under green tests (`/tdd` IMPROVE step); commit as `refactor:` / `fix:`.
+   Findings you deliberately skip: one line each in the ledger saying why, carried into the
+   Phase 5 debrief. _(`/simplify` is a cheap follow-up pass for dead code and leftover
+   scaffolding the review didn't name.)_
+4. Re-run the contract. Phase 3 closes only when it is green **after** the fixes.
 
 ---
 
-## Phase 4 — Verification loop (until spec is met)
+## Phase 4 — Verification loop (budgeted, until spec is met)
 
 A dedicated final verification gate:
 
-1. Run the full test suite plus **e2e / integration tests** appropriate to the stack
-   (Playwright for web flows; equivalent otherwise) to validate the implementation
-   **against the spec**, not just against the unit tests. For UI work, also check the built
-   screens against the approved mock — every screen and state it promised must exist.
-2. If anything fails or a requirement is unmet, loop back: fix, re-test, re-commit. For any
+1. Run the **full verification contract** plus **e2e / integration tests** appropriate to the
+   stack (Playwright for web flows; equivalent otherwise) to validate the implementation
+   **against the spec**, not just against the unit tests.
+2. **Run the actual app** — `/run` it. Tests passing is not the same as the thing working.
+   Drive the P1 journeys end to end. For UI work, screenshot each built screen and compare
+   against the approved mock: every screen and state it promised must exist, and check the
+   basics the mock can't — keyboard navigation, focus order, contrast, and the loading /
+   empty / error states in the real app.
+3. **Security pass.** Run **`/security-review`** over the feature diff (free, local).
+   Anything touching auth, user input, secrets, file paths, SQL, or external calls gets
+   scrutiny; treat criticals as blocking, not as debrief material.
+4. If anything fails or a requirement is unmet, loop back: fix, re-test, re-commit. For any
    hard failure or performance regression, **run the `/diagnosing-bugs` skill** to run a
    disciplined diagnosis loop instead of guessing.
-3. **Keep looping** until every success criterion in the Spec Brief and every acceptance
-   scenario passes. Only then is the feature "done".
+5. **Loop budget — the escape hatch.** Track attempts per distinct failure in the ledger.
+   **Three failed attempts on the same failure and you stop**: no fourth guess. Report to
+   the user what you tried, what `/diagnosing-bugs` established, your best hypothesis, and
+   the options — with a recommendation. Same rule for gate churn: if fixing review findings
+   keeps breaking tests, stop after two rounds and escalate. A fix-break-fix cycle can eat a
+   whole session; the budget is what makes the loop terminate.
+6. **Keep looping** (within budget) until every success criterion in the Spec Brief and
+   every acceptance scenario passes.
+7. **Second code quality gate — after the loop is green.** Re-run the `code-review` skill
+   exactly as in the Phase 3 gate (same fixed point, so it now covers the Phase 3 refactors
+   plus every fix the verification loop introduced — fixes made under test pressure are
+   where anti-patterns get reintroduced).
+   - Fix the findings, re-run the contract + e2e, re-commit. Any fix here sends you back
+     to step 1 of this phase.
+   - Feature is "done" only when the contract is green **and** the code-review gate comes
+     back with nothing left unaddressed except explicitly-recorded, justified skips.
 
 ---
 
@@ -195,7 +326,8 @@ A dedicated final verification gate:
 Do not silently declare victory. Give the user a clear debrief:
 
 - **What was accomplished** — features delivered, mapped back to the Spec Brief.
-- **Compromises made** — where reality diverged from the ideal, and why.
+- **Compromises made** — where reality diverged from the ideal, and why. Include the
+  code-review findings you consciously skipped at either quality gate.
 - **Potential weak points** — fragile areas, thin test coverage, assumptions that could bite.
 - **Inputs needed from you** — API keys, secrets, env vars, accounts, or manual setup the
   feature requires to actually run. List them explicitly.
@@ -205,15 +337,42 @@ End by asking the user how they want to proceed (merge, iterate, or park).
 
 ---
 
+## Phase 6 — Land it (docs, write-back, PR)
+
+Runs once the user has answered Phase 5 with merge or iterate. This is the phase that makes
+the _next_ feature cheaper than this one.
+
+1. **Docs true again.** Update `CONTEXT.md` and the glossary with terms this work
+   introduced, add an ADR for any architectural decision taken during Phases 1–4 that isn't
+   yet recorded, refresh the README / usage docs for behaviour a user can now see.
+2. **Write back to `CLAUDE.md`.** Fold in the conventions this run established or discovered
+   — the verification contract commands, layering rules, patterns to follow, traps to avoid.
+   This is the compounding step: it is how the codebase gets better rather than just bigger.
+   Keep it terse and additive; don't restate what the code already says.
+3. **Close the ledger** — final status, commits, deferred findings. Archive or delete
+   `.deep-plan/state.md`; do not leave a stale ledger to confuse the next run.
+4. **PR, only when the user asks for it.** On explicit go-ahead: push the branch and open a
+   PR whose body is the Phase 5 debrief plus a test plan. Never push unprompted.
+
+---
+
 ## Guardrails
 
 - Free only: no paid API/LLM calls at any point.
+- Read `.deep-plan/state.md` first, write it at every gate, resume rather than restart.
 - Never write production code before the Spec Brief is signed off (Phase 0), the mock is
   approved if there's a UI (Phase 0.5), and tasks exist (Phase 2). The Phase 0.5 mock is the
   one exception — it's throwaway, and it never gets promoted into the implementation.
-- Compose, don't reimplement: prefer the mapped skills (`/grill-with-docs`, `/research`,
-  `/prototype`, `frontend-design`, `/codebase-design`, `speckit-custom-plan-tdd-sdd`,
-  `/tdd`, `/diagnosing-bugs`) over redoing their work inline; fall back to inline only when
+- Compose, don't reimplement: prefer the mapped skills (`/wayfinder`, `/grill-with-docs`,
+  `/research`, `/prototype`, `frontend-design`, `/codebase-design`,
+  `speckit-custom-plan-tdd-sdd`, `/tdd`, `code-review`, `/simplify`, `/security-review`,
+  `/run`, `/diagnosing-bugs`) over redoing their work inline; fall back to inline only when
   one isn't installed.
-- One commit per passing slice; never commit failing tests.
+- Green is the verification contract exiting 0 — not "the test I remembered to run".
+- Two code quality gates, both mandatory: end of Phase 3 and end of Phase 4. Green tests are
+  not a quality signal — anti-patterns pass tests.
+- Three strikes on one failure, or two rounds of gate churn, and you stop and escalate.
+- Reuse before you build: the Recon Note's reuse list beats a fresh implementation.
+- No new runtime dependency without saying so and why; subagents may not add one unasked.
+- One commit per passing slice; never commit failing tests; never push without being asked.
 - Prefer the cheapest capable model for isolated slices; strong model for design + review.

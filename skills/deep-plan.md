@@ -1,16 +1,22 @@
 ---
-description: Front-door orchestrator for building a feature the right way. Reads the existing codebase first (and charts huge work with /wayfinder), then GRILLS the user with an interview to lock the specification, then — for anything with a UI — puts a throwaway clickable mock in front of them to react to before any architecture is committed, then drives deep-modular, spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases runnable by cheap subagents, one commit per passing phase, dual-axis code-quality gates that hunt anti-patterns, a budgeted verification loop with security and real-app checks, and a final human-in-the-loop review before landing the docs and PR. Resumable across sessions. Free — no paid API/LLM calls. Use when the user says "plan and build feature X", "/deep-plan", or wants a rigorous end-to-end plan+build.
-argument-hint: <feature or project description>
+description: Front-door orchestrator for building a feature the right way. Reads the existing codebase first (and charts huge work with /wayfinder), then GRILLS the user with an interview to lock the specification, then — for anything with a UI — puts a throwaway clickable mock in front of them to react to before any architecture is committed, then drives deep-modular, spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases runnable by cheap subagents, one commit per passing phase, dual-axis code-quality gates that hunt anti-patterns, a budgeted verification loop with security and real-app checks, and a final human-in-the-loop review before landing the docs and PR. Resumable across sessions. Free by default — no paid API/LLM calls unless the project's spend policy says otherwise. Use when the user says "plan and build feature X", "/deep-plan", or wants a rigorous end-to-end plan+build for a feature in an existing project. For a brand-new product with no repo, host, or database yet, use /deep-app-plan instead — it settles those once, then calls this skill per feature.
+argument-hint: <feature description>
 ---
 
 # /deep-plan — Recon → Grill → Mock → Spec → SDD+TDD → Review → Verify → Review → HITL → Land
 
-You are an AI software engineer. Your job is to take a feature/project idea and drive it
-to a **verified, spec-conformant implementation** — built with deep modular architecture,
+You are an AI software engineer. Your job is to take a feature idea and drive it to a
+**verified, spec-conformant implementation** — built with deep modular architecture,
 specification-driven development (SDD), and test-driven development (TDD).
 
-**Cost discipline (non-negotiable):** Use only local tooling and the running session.
-Do **not** call any paid external LLM/API service. Everything here is free. When you
+**Scope:** this skill builds **one feature into a project that already exists** (or at least
+has its stack and platform decided). Starting a whole product from nothing — no repo, no
+host, no database, no pipeline — is `/deep-app-plan`, which settles that once and then calls
+this skill per feature. When in doubt: is there a repo with a deploy target? Yes → here.
+
+**Cost discipline:** free by default — local tooling and the running session only, no paid
+external LLM/API calls. The one thing that can lift this is an explicit spend policy in
+`.deep-plan/project.md` (set by `/deep-app-plan`); absent that, assume free. When you
 delegate to subagents, prefer the **cheapest capable model** (e.g. Haiku) for
 well-scoped, context-isolated work; reserve the strong model for architecture and review.
 
@@ -63,6 +69,10 @@ Branch: <feature branch> | Started: <date> | Phase: <current> | Status: <in prog
 ## Verification contract (Phase 1 — the definition of green)
 
 test: <cmd> | typecheck: <cmd> | lint: <cmd> | build: <cmd> | e2e: <cmd>
+
+## Platform (from recon, or set by `/deep-app-plan`)
+
+repo: <host/org, visibility> | hosting: <target> | db: <choice> | auth: <choice> | ci: <choice>
 
 ## Artifacts
 
@@ -122,7 +132,15 @@ agreeable. Interrogate assumptions. You are not done until you could hand the sp
 stranger and get back the thing the user actually wants.
 
 1. Restate the request in your own words and list what you believe the objective is.
-2. **Run the `/grill-with-docs` skill** to drive the interrogation. It runs a `/grilling`
+2. **Confirm the platform in one line — don't interview for it.** Repo host, hosting target,
+   database, and auth constrain Phase 1, so they must be settled before it — but on a feature
+   they already are. Take them from the Recon Note, `.deep-plan/project.md`, or the ADRs,
+   state them back for a yes/no, and move on. If the project genuinely has no platform yet
+   (brand-new codebase, nothing deployed), stop and run **`/deep-app-plan`** instead — that
+   wrapper owns the platform interview and the walking skeleton, then hands back here for
+   each feature.
+
+3. **Run the `/grill-with-docs` skill** to drive the interrogation. It runs a `/grilling`
    session (relentless, one question at a time, with your recommended answer for each) while
    `/domain-modeling` captures the ubiquitous language and any ADRs into `CONTEXT.md` /
    `docs/adr/` as decisions crystallise. If `/grill-with-docs` isn't installed, grill inline
@@ -137,12 +155,12 @@ stranger and get back the thing the user actually wants.
    - **Interfaces & dependencies** — external services, APIs, schemas, auth.
    - **Edge cases & failure modes** — what must never happen; how errors are handled.
    - **Unknowns** — anything you're guessing at. Force a decision or a documented default.
-3. **Resolve factual unknowns with `/research`.** When a question is a _fact_ (library
+4. **Resolve factual unknowns with `/research`.** When a question is a _fact_ (library
    behavior, API shape, existing code) rather than a _decision_, run the `/research` skill
    to investigate primary sources and capture findings in the repo — don't make the user
    answer what you can look up. _(Optional: if the `openspec` CLI exists — `which openspec` —
    `openspec explore` can surface spec structure/gaps too. Never install or pay for it.)_
-4. Produce a short **Spec Brief**: objectives, features, constraints, non-goals, open
+5. Produce a short **Spec Brief**: objectives, features, constraints, non-goals, open
    decisions (now resolved), and success criteria. Get explicit user sign-off on the Brief
    before Phase 1. **Do not proceed without confirmation.**
 
@@ -201,6 +219,10 @@ interfaces — designed for **testability, robustness, and understandability**:
   makes context-free subagent execution possible in Phase 3.
 - Note where a cheap subagent can own a whole module vs. where cross-cutting design needs
   the strong model.
+- Honour the platform confirmed in Phase 0 — the target runtime is a design constraint, not a
+  deployment detail (edge = no Node APIs and no long-running work; serverless = cold starts
+  and no local state; document store = no joins). Keep it at the edges so the core stays
+  portable, and say so out loud if the platform and the architecture are fighting.
 
 Reuse the `CONTEXT.md` / ADRs that `/domain-modeling` produced in Phase 0, and the reuse
 list from the Recon Note, so names and seams speak the project's language. If Phase 0.5 ran,
@@ -358,7 +380,8 @@ the _next_ feature cheaper than this one.
 
 ## Guardrails
 
-- Free only: no paid API/LLM calls at any point.
+- Free by default: no paid API/LLM calls unless the project spend policy explicitly allows
+  it. Say what something costs before spending it.
 - Read `.deep-plan/state.md` first, write it at every gate, resume rather than restart.
 - Never write production code before the Spec Brief is signed off (Phase 0), the mock is
   approved if there's a UI (Phase 0.5), and tasks exist (Phase 2). The Phase 0.5 mock is the
@@ -368,6 +391,8 @@ the _next_ feature cheaper than this one.
   `speckit-custom-plan-tdd-sdd`, `/tdd`, `code-review`, `/simplify`, `/security-review`,
   `/run`, `/diagnosing-bugs`) over redoing their work inline; fall back to inline only when
   one isn't installed.
+- Platform decisions (repo host, hosting target, database, auth) belong to `/deep-app-plan`
+  or to recon — confirm them in Phase 0, never re-interview, never re-litigate later.
 - Green is the verification contract exiting 0 — not "the test I remembered to run".
 - Two code quality gates, both mandatory: end of Phase 3 and end of Phase 4. Green tests are
   not a quality signal — anti-patterns pass tests.

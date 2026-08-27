@@ -31,6 +31,7 @@ the commit / verification / HITL loop) and delegates the heavy lifting:
 | Research unknowns against primary sources  | `/research`                                                |
 | Throwaway UI mock for the user to react to | `/prototype` + `frontend-design` (+ `dataviz` for charts)  |
 | Deep-modular architecture vocabulary       | `/codebase-design`                                         |
+| Write subagent prompts / agent-read docs   | `/writing-for-agents` (Phases R, 3, 6)                     |
 | Tooling-enforced quality on a new repo     | `/setup-pre-commit`, `git-guardrails-claude-code`          |
 | The full SDD+TDD spec→plan→tasks engine    | `speckit-custom-plan-tdd-sdd`                              |
 | Red→green→refactor discipline per slice    | `/tdd`                                                     |
@@ -274,6 +275,13 @@ run by a **subagent with no prior conversation context** — maximizing token ef
 - Each slice's task text carries everything the subagent needs: exact file paths,
   interfaces, acceptance tests, the **verification contract**, and the Recon Note's reuse
   list. No hidden context.
+- **Write that task text with `/writing-for-agents`** — as with every subagent prompt and
+  agent-read artifact this skill produces (the `Explore` dispatch in Phase R, the Recon
+  Note, the review sub-agent prompts, the Phase 6 docs). Its default move is deletion: a
+  line the model already obeys is a no-op that spends the subagent's context and changes
+  nothing. Sharpen each completion criterion until the subagent can tell done from
+  not-done, state the target behaviour rather than banning its opposite, and point at
+  `spec.md` / the Recon Note instead of restating them.
 - Dispatch each independent, well-scoped slice to a **cheap-model subagent** (e.g. Haiku).
   Keep architecture/integration decisions on the strong model.
 - Enforce TDD inside each slice using the `/tdd` skill's discipline: write the failing tests

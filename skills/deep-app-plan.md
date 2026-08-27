@@ -25,6 +25,7 @@ spend policy, honour it — and **always say plainly what a choice costs** befor
 | Product frame + v1 scope                   | Phase A (here), sharpened with `/grilling`           |
 | Platform decisions + ADRs                  | Phase B (here) + `/domain-modeling`                  |
 | Repo, scaffold, tooling, CI                | Phase C (here) + `/setup-pre-commit`, git guardrails |
+| Agent-read docs (CLAUDE.md, prompts)       | Phase C (here) + `/writing-for-agents`               |
 | Walking skeleton deployed to prod          | Phase D (here) + `/run`                              |
 | Every actual feature                       | **`/deep-plan`**, once per milestone (Phase E)       |
 | Launch readiness + handover                | Phase F (here) + `/security-review`                  |
@@ -186,9 +187,13 @@ proceed without confirmation** — these are the expensive ones.
    token in repo secrets), or the platform's git integration connected to the repo. If it's
    the git-integration route, protect `main` — required status checks, no direct pushes —
    or the platform will happily deploy red code.
-6. **Seed the agent docs** — `CLAUDE.md` with the stack, the contract commands, and the
-   conventions chosen; `CONTEXT.md` seeded from the Phase A/B ADRs. Future `/deep-plan` runs
-   read these in recon, so this is what makes feature #1 cheap.
+6. **Seed the agent docs with `/writing-for-agents`** — `CLAUDE.md` with the stack, the
+   contract commands, and the conventions chosen; `CONTEXT.md` seeded from the Phase A/B
+   ADRs. Future `/deep-plan` runs read these in recon, so this is what makes feature #1
+   cheap. `CLAUDE.md` is always-loaded: it earns the hardest pruning in the repo. Cache
+   what the agent cannot find by looking — the unwritten convention, the reason behind a
+   choice, the gotcha no config confesses — and leave the one-command lookups to
+   `package.json`, where they cannot go stale.
 
 ---
 

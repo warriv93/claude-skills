@@ -1,5 +1,5 @@
 ---
-description: Front-door orchestrator for building a whole application from nothing. Frames the product and its smallest lovable v1, interrogates the platform decisions that can't be undone later (repo host and visibility, hosting target, database, auth, CI/CD, secrets, spend policy, lifespan), creates the repo and scaffolds the stack, then ships a walking skeleton to production before any feature code exists — so the pipeline is proven on day one. Then drives each milestone through /deep-plan (grill → mock → SDD+TDD → quality gates → verify), and finishes with launch readiness: domain, secrets, backups, observability, whole-app security review, and onboarding docs. Resumable across sessions. Free by default — spend is asked for, never assumed. Use when the user says "build me an app", "new project", "/deep-app-plan", or starts something with no repo yet.
+description: Builds a whole application from nothing. Frames the product and its smallest lovable v1, settles the one-way platform decisions (repo host and visibility, hosting, database, auth, CI/CD, secrets, spend policy, lifespan), scaffolds the stack, and ships a walking skeleton to production before any feature code exists — then drives each milestone through /deep-plan and finishes with launch readiness. Resumable across sessions; free unless spend is approved. Use for "/deep-app-plan", "build me an app", "new project", or anything starting with no repo yet.
 argument-hint: <what the app is, in a sentence>
 ---
 
@@ -228,6 +228,10 @@ gates, the budgeted verification loop, HITL review, docs and PR.
 
 - **One milestone at a time.** Finish and deploy before starting the next; a half-landed
   milestone in a fresh project is how apps become unshippable.
+- **Dispatch each milestone, don't host it.** The ledger and `CLAUDE.md` carry everything
+  `/deep-plan` needs, so hand it the milestone frame and let it run in its own context; take
+  back its Phase 5 debrief, not its transcript. A window that has watched three milestones
+  re-sends all three on every turn.
 - `/deep-plan` keeps its own `.deep-plan/state.md` per feature. When it lands, tick the
   milestone here and let it close its state file.
 - Between milestones, **update the project ledger and `CLAUDE.md`** with what was learned —
@@ -267,6 +271,8 @@ End by asking how they want to proceed. Then close or archive the ledger.
   separately. Until it is answered, free only. State costs in real money before incurring
   them, and never quietly upgrade a free tier.
 - Read `.deep-plan/project.md` first; resume, never restart.
+- Update the ledger between milestones and dispatch the next one fresh; this window holds
+  the project, not the work.
 - Phase B before any architecture. Platform decisions are one-way doors, and `/deep-plan`
   reads them rather than re-asking.
 - Something is deployed before feature work starts. M0 is not optional.

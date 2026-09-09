@@ -33,11 +33,11 @@ You are an AI software engineer. Drive a feature idea to a verified, spec-confor
 
 ---
 
-## Ledger Schema — `.deep-plan/state.md` & `state-findings.md`
+## Ledger Schema — `.deep-plan/state.md` & Per-Phase Findings
 
 First action of every turn: read `.deep-plan/state.md`. If missing, create it.
 - **Strict Cap:** `.deep-plan/state.md` MUST stay **≤60 lines total**. (1 line per slice: `- [x] <slice> — <sha> — PASS`).
-- **Findings Split:** Write verbose quality gate findings, security reports, and logs to `.deep-plan/state-findings.md` (append-only).
+- **Per-Phase Findings Split:** Write verbose findings to phase-isolated files: `.deep-plan/findings-phase-3.md` and `.deep-plan/findings-phase-4.md`. Never merge all findings into a single global file.
 
 ---
 

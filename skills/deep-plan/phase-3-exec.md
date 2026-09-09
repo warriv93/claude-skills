@@ -18,7 +18,7 @@ All slices committed and green ≠ done. Record current commit SHA as `<phase-3-
    - Mandate **`NO_PREAMBLE`**: subagents return raw findings markdown table only, zero conversational intro or concluding remarks.
 3. Fixed point = branch point (`git merge-base main HEAD`). Subagents run `git diff --stat` first to identify modified files before fetching full line diffs.
 4. **Fix what it finds:** standards violations, missing spec items, scope creep, code smells. Refactor under green tests (`/tdd` IMPROVE); commit as `refactor:` / `fix:`.
-   - **Write detailed finding notes and explanations of skipped findings to `.deep-plan/state-findings.md`**.
-   - In `state.md`, record only high-level status line (`Quality gate: PASS with N findings in state-findings.md`).
+   - **Write detailed finding notes and explanations of skipped findings to `.deep-plan/findings-phase-3.md`** (Phase-isolated findings file).
+   - In `state.md`, record only high-level status line (`Quality gate: PASS with N findings in findings-phase-3.md`).
 5. Re-run verification contract. Phase 3 closes only when green after fixes. Record `<phase-3-end-sha>`.
 6. Update `.deep-plan/state.md` and execute `/compact` before Phase 4.

@@ -1,5 +1,5 @@
 ---
-description: Builds one feature end to end in a project that already exists: reads the codebase, GRILLS the user until the spec is unambiguous, puts a clickable UI mock in front of them to sign off, then runs SDD+TDD implementation through context-isolated subagents with quality gates, a verification loop, and a final review before the PR. Resumable across sessions; free by default. Use for "/deep-plan", "plan and build feature X", or a rigorous end-to-end feature build. For a brand-new product with no repo or host yet, use /deep-app-plan.
+description: Front-door orchestrator for building a feature the right way. Reads the existing codebase first (and charts huge work with /wayfinder), then GRILLS the user with an interview to lock the specification, then — for anything with a UI — puts a throwaway clickable mock in front of them to react to before any architecture is committed, then drives deep-modular, spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases runnable by cheap subagents, one commit per passing phase, dual-axis code-quality gates that hunt anti-patterns, a budgeted verification loop with security and real-app checks, and a final human-in-the-loop review before landing the docs and PR. Resumable across sessions. Free by default — no paid API/LLM calls unless the project's spend policy says otherwise. Use when the user says "plan and build feature X", "/deep-plan", or wants a rigorous end-to-end plan+build for a feature in an existing project. For a brand-new product with no repo, host, or database yet, use /deep-app-plan instead — it settles those once, then calls this skill per feature.
 argument-hint: <feature description>
 ---
 
@@ -60,9 +60,7 @@ lose the thread. **First action of every invocation:** read `.deep-plan/state.md
 - **It doesn't** → create it, then start at Phase R.
 
 Rewrite it at every phase boundary and every gate — before the phase's work, not after
-you've forgotten. Keep it under a page; it is a ledger, not a diary. It is also the
-**dispatch brief** every subagent is handed (see Conducting below), so it points at files
-rather than retelling them: a stranger with this file and the repo can pick the run up cold.
+you've forgotten. Keep it under a page; it is a ledger, not a diary.
 
 ```markdown
 # deep-plan: <feature>
@@ -97,55 +95,7 @@ Spec Brief: <path> | spec.md: <path> | tasks.md: <path> | Mock: <URL> | Recon No
 ## Loop budget
 
 Phase 4 attempts on current failure: <n>/3
-
-## Resume
-
-Next action: <the one thing the next session does first>
 ```
-
----
-
-## Conducting — the orchestrator stays thin
-
-Phases 0 and 0.5 are a conversation with the user. Everything after them is *work*, and work
-belongs in a subagent. Once the mock is signed off the user should be able to walk away and
-come back to a finished feature, so from Phase 1 on you **conduct**: read the ledger, dispatch
-a unit of work, record what came back in the ledger, dispatch the next. You do not read the
-diffs, the logs, or the screenshots yourself.
-
-Every turn re-sends the whole conversation, so what this window accumulates is what the run
-costs. A conductor's window grows by ten lines per dispatch. A window that did the work itself
-re-sends every slice, every test log and every screenshot on every later turn — and reasons
-worse as it fills.
-
-**The invariant that makes it work:** everything a subagent needs is on disk, never only in
-the conversation — Recon Note, Spec Brief, mock URL, `CONTEXT.md` / ADRs, `spec.md` /
-`tasks.md`, the verification contract, commits, deferred findings. Write each decision to its
-file the moment it is made. A dispatch carries the ledger plus the paths it names and nothing
-else; a subagent that would have had to be in the room means something never got written down.
-
-**One subagent per unit** — cheapest capable model unless the row says otherwise:
-
-| Unit                              | Gets                                  | Returns (≤10 lines)           |
-| --------------------------------- | ------------------------------------- | ----------------------------- |
-| Phase R recon fan-out             | the repo                              | Recon Note path, stack, risks |
-| Each Phase 3 slice                | slice task text, contract, Recon Note | files, tests, contract result |
-| Each quality gate (strong model)  | branch point, `spec.md`, standards    | findings, fixes, skips        |
-| Phase 4 contract + e2e + `/run`   | contract, `spec.md`, mock URL         | pass/fail per criterion       |
-| Phase 4 security pass             | the feature diff                      | findings by severity          |
-| A `/diagnosing-bugs` loop         | the failure, the contract             | cause, fix, result            |
-
-Screenshots and test logs are the whole point of this: the verification subagent looks at them
-and returns a verdict. An image in this window is paid for on every remaining turn of the run.
-
-**Write the ledger after every return, before the next dispatch** — it is the run's working
-memory now, not a crash file. If this window is growing faster than ten lines a dispatch, you
-are doing work that belonged to a subagent.
-
-**Unattended to Phase 5.** After the mock gate, run to completion without waiting on the user.
-Park at the Phase 5 debrief, or earlier at a loop-budget escalation — those are the only two
-places a finished-feature run stops. If a session ends mid-run anyway, the ledger resumes it
-cold; that is what it is for.
 
 ---
 
@@ -234,8 +184,6 @@ medium for arguing about a screen; put a thing in front of the user instead.
    - Clickable where the flow matters (screen → screen), so the user can walk the journey.
    - Throwaway means throwaway. This code is **not** the implementation and must never be
      promoted into it; Phases 2–3 rebuild for real, test-first.
-   - Keep the markup out of the window: write it to a file, iterate with targeted edits,
-     and let the published Artifact — not a re-read of the file — be what you both look at.
 2. **Put it in front of the user.** Publish the mock with the **Artifact** tool (private
    page, real URL, works on their phone) — or run it locally via the `/run` skill if the
    stack demands it. A file path they have to open themselves is not good enough.
@@ -253,9 +201,7 @@ medium for arguing about a screen; put a thing in front of the user instead.
    non-goals. Keep the mock URL as the visual reference for Phases 1–3.
 
 **Gate:** no Phase 1 until the user has signed off on the mock. **Do not proceed without
-confirmation.** This is the last gate that needs the user until Phase 5 — everything agreed
-here is now in the Spec Brief and the mock URL, so from Phase 1 on you conduct and they can
-walk away.
+confirmation.**
 
 ---
 
@@ -319,9 +265,6 @@ _(Lightweight alternative when full speckit is overkill: `/to-spec` to synthesiz
 from this conversation and `/to-tickets` to break it into tracer-bullet slices. These need
 `/setup-matt-pocock-skills` run once to know your issue tracker.)_
 
-`tasks.md` on disk closes the phase. Speckit's generation chatter has served its purpose —
-execution reads the files, so dispatch from here rather than from what you remember writing.
-
 ---
 
 ## Phase 3 — Context-isolated phased execution (cheap subagents, commit per phase)
@@ -341,9 +284,6 @@ run by a **subagent with no prior conversation context** — maximizing token ef
   `spec.md` / the Recon Note instead of restating them.
 - Dispatch each independent, well-scoped slice to a **cheap-model subagent** (e.g. Haiku).
   Keep architecture/integration decisions on the strong model.
-- **Ask each subagent for ≤10 lines back**: files touched, tests added, contract result,
-  and anything it deviated on. The slice's code is in git and the contract says whether it
-  works — reviewing the diff is the gate's job, not the dispatcher's.
 - Enforce TDD inside each slice using the `/tdd` skill's discipline: write the failing tests
   first (RED), implement the minimum to pass (GREEN), refactor (IMPROVE). Give each isolated
   subagent the instruction to follow `/tdd` so tests are worth keeping, not just green.
@@ -370,8 +310,7 @@ the whole feature diff for anti-patterns and standards drift before Phase 4:
    Findings you deliberately skip: one line each in the ledger saying why, carried into the
    Phase 5 debrief. _(`/simplify` is a cheap follow-up pass for dead code and leftover
    scaffolding the review didn't name.)_
-4. Re-run the contract. Phase 3 closes only when it is green **after** the fixes. Phase 4
-   reads git, `spec.md` and the contract — not this conversation.
+4. Re-run the contract. Phase 3 closes only when it is green **after** the fixes.
 
 ---
 
@@ -381,15 +320,12 @@ A dedicated final verification gate:
 
 1. Run the **full verification contract** plus **e2e / integration tests** appropriate to the
    stack (Playwright for web flows; equivalent otherwise) to validate the implementation
-   **against the spec**, not just against the unit tests. Send long output to a file and
-   read the failures out of it — a green suite needs one line, not its log.
+   **against the spec**, not just against the unit tests.
 2. **Run the actual app** — `/run` it. Tests passing is not the same as the thing working.
    Drive the P1 journeys end to end. For UI work, screenshot each built screen and compare
    against the approved mock: every screen and state it promised must exist, and check the
    basics the mock can't — keyboard navigation, focus order, contrast, and the loading /
-   empty / error states in the real app. Screenshots are the most expensive thing you can
-   put in the window — take them one screen at a time, judge each as it arrives, and record
-   the verdict in the ledger so the image never has to be looked at twice.
+   empty / error states in the real app.
 3. **Security pass.** Run **`/security-review`** over the feature diff (free, local).
    Anything touching auth, user input, secrets, file paths, SQL, or external calls gets
    scrutiny; treat criticals as blocking, not as debrief material.
@@ -412,8 +348,6 @@ A dedicated final verification gate:
      to step 1 of this phase.
    - Feature is "done" only when the contract is green **and** the code-review gate comes
      back with nothing left unaddressed except explicitly-recorded, justified skips.
-   - Phase 5's debrief is then written from the ledger and the git log, so it costs nothing
-     to have kept this window thin.
 
 ---
 
@@ -457,9 +391,6 @@ the _next_ feature cheaper than this one.
 - Free by default: no paid API/LLM calls unless the project spend policy explicitly allows
   it. Say what something costs before spending it.
 - Read `.deep-plan/state.md` first, write it at every gate, resume rather than restart.
-- After the mock gate you conduct: dispatch the work, record ≤10 lines, never read diffs,
-  logs or screenshots in this window. Then run unattended to the Phase 5 debrief.
-- A decision that exists only in the conversation is lost — write it to its file first.
 - Never write production code before the Spec Brief is signed off (Phase 0), the mock is
   approved if there's a UI (Phase 0.5), and tasks exist (Phase 2). The Phase 0.5 mock is the
   one exception — it's throwaway, and it never gets promoted into the implementation.

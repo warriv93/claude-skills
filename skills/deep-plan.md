@@ -16,9 +16,11 @@ this skill per feature. When in doubt: is there a repo with a deploy target? Yes
 
 **Cost discipline:** free by default — local tooling and the running session only, no paid
 external LLM/API calls. The one thing that can lift this is an explicit spend policy in
-`.deep-plan/project.md` (set by `/deep-app-plan`); absent that, assume free. When you
-delegate to subagents, prefer the **cheapest capable model** (e.g. Haiku) for
-well-scoped, context-isolated work; reserve the strong model for architecture and review.
+`.deep-plan/project.md` (set by `/deep-app-plan`); absent that, assume free.
+
+**Subagent Model Tier Routing Matrix:**
+- **Cheap Model (`haiku` / `flash`):** Phase R recon fan-out (`Explore`), Phase 4 `/security-review`, simple search/file-finding, and screenshot/verification checks.
+- **Strong Model (`opus` / `pro`):** Phase 1 modular architecture design, Phase 3 & 4 Code Quality Gates (`code-review` spec/standards axes), and `/diagnosing-bugs` loops.
 
 This skill is an **orchestrator** that composes other installed skills rather than
 re-implementing them. It adds the connective tissue (cheap-subagent slicing, the ledger,
@@ -119,24 +121,24 @@ To prevent context accumulation and token spikes, follow these rules:
 
 1. **`/clear` after Phase 0.5 mock sign-off (Lever 5):** The grill and mock conversation is disposable once sign-off is achieved. `/clear` resets the window before starting Phase 1. All agreed decisions live on disk in `spec-brief.md`, `recon-note.md`, and `CONTEXT.md`.
 2. **Execute Phase 3 slices sequentially inline (Lever 2):** Slices are executed inline in the main window using `/tdd`. This avoids context duplication from spawning full-context subagents per slice. Each slice commits immediately on pass.
-3. **Reserve subagents for read-only & isolated gates (Lever 2):** Use subagents ONLY for tasks that produce heavy logs/images or independent reviews:
-   - Phase R recon fan-out (`Explore` subagent)
-   - Phase 3 & 4 Code Quality Gates (`code-review` subagents on strong model)
-   - Phase 4 Verification & Screenshot comparison (keeps images/DOM dumps out of main window)
-   - Phase 4 Security Pass (`/security-review`)
-   - `/diagnosing-bugs` loop when stuck
+3. **Reserve subagents for read-only & isolated gates (Lever 2):** Use subagents ONLY for tasks that produce heavy logs/images or independent reviews, routed by model tier:
+   - Phase R recon fan-out (`Explore` subagent — **Cheap Model**)
+   - Phase 3 & 4 Code Quality Gates (`code-review` subagents — **Strong Model**)
+   - Phase 4 Verification & Screenshot comparison (**Cheap Model** — keeps images/DOM dumps out of main window)
+   - Phase 4 Security Pass (`/security-review` — **Cheap Model**)
+   - `/diagnosing-bugs` loop when stuck (**Strong Model**)
 4. **Cap the ledger & split findings (Lever 3):** Keep `state.md` ≤60 lines (1 line per slice). Append detailed findings and logs to `.deep-plan/state-findings.md`.
 5. **Automated `/compact` at phase boundaries (Lever 1):** Execute `/compact` at every phase transition (after R, Phase 0, Phase 1, Phase 2, Phase 3, Phase 4). Disk files (`state.md`, `state-findings.md`, `spec.md`, `tasks.md`) preserve state across compactions.
 
-**Subagent Dispatch Table** — cheapest capable model unless row specifies otherwise:
+**Subagent Dispatch Table:**
 
-| Unit                             | Gets                               | Returns (≤10 lines)            |
-| -------------------------------- | ---------------------------------- | ------------------------------ |
-| Phase R recon fan-out            | the repo                           | Recon Note path, stack, risks  |
-| Each quality gate (strong model) | branch point, `spec.md`, standards | findings summary, fixes, skips |
-| Phase 4 contract + e2e + `/run`  | contract, `spec.md`, mock URL      | pass/fail verdict per story    |
-| Phase 4 security pass            | the feature diff                   | findings by severity           |
-| A `/diagnosing-bugs` loop        | the failure, the contract          | cause, fix, result             |
+| Unit                             | Target Model | Gets                               | Returns (≤10 lines)            |
+| -------------------------------- | ------------ | ---------------------------------- | ------------------------------ |
+| Phase R recon fan-out            | Cheap        | the repo                           | Recon Note path, stack, risks  |
+| Each quality gate                | Strong       | branch point, `spec.md`, standards | findings summary, fixes, skips |
+| Phase 4 contract + e2e + `/run`  | Cheap        | contract, `spec.md`, mock URL      | pass/fail verdict per story    |
+| Phase 4 security pass            | Cheap        | the feature diff                   | findings by severity           |
+| A `/diagnosing-bugs` loop        | Strong       | the failure, the contract          | cause, fix, result             |
 
 Screenshots and full test logs must never be loaded into the main window — subagents evaluate them and return a ≤10-line verdict.
 
@@ -190,21 +192,12 @@ stranger and get back the thing the user actually wants.
    wrapper owns the platform interview and the walking skeleton, then hands back here for
    each feature.
 
-3. **Run the `/grill-with-docs` skill** to drive the interrogation. It runs a `/grilling`
-   session (relentless, one question at a time, with your recommended answer for each) while
-   `/domain-modeling` captures the ubiquitous language and any ADRs into `CONTEXT.md` /
-   `docs/adr/` as decisions crystallise. If `/grill-with-docs` isn't installed, grill inline
-   instead. Either way, keep going until there are **zero blocking ambiguities**; where the
-   user is unsure, propose a sensible default, state it explicitly, and get a yes/no.
-   The grilling must cover:
-   - **Objectives & success criteria** — what does "done" measurably look like?
-   - **Users & primary flows** — who uses it, what are the P1/P2/P3 journeys?
-   - **Scope boundaries** — explicit non-goals and out-of-scope items.
-   - **Constraints** — language/stack, existing code to respect, performance, security,
-     data, compliance, deadlines.
-   - **Interfaces & dependencies** — external services, APIs, schemas, auth.
-   - **Edge cases & failure modes** — what must never happen; how errors are handled.
-   - **Unknowns** — anything you're guessing at. Force a decision or a documented default.
+3. **Proportional Grilling:** Calibrate interrogation depth to feature complexity:
+   - **Small Scope (1–3 files / straightforward):** Ask 1–2 target questions max, or state explicit proposed defaults and ask for confirmation.
+   - **Medium Scope (3–10 files):** Ask 3–5 key questions covering main flow and edge cases.
+   - **Large / Cross-Cutting Scope:** Run the full **`/grill-with-docs`** skill interrogation (`/grilling` + `/domain-modeling`).
+
+   Regardless of scope, ensure zero blocking ambiguities before writing the spec.
 4. **Resolve factual unknowns with `/research`.** When a question is a _fact_ (library
    behavior, API shape, existing code) rather than a _decision_, run the `/research` skill
    to investigate primary sources and capture findings in the repo — don't make the user
@@ -288,8 +281,9 @@ result as an architecture sketch feeding directly into the spec/plan.
 **Then pin the verification contract.** "Run the tests" is folklore; subagents need literal
 commands. Write the exact invocations into the ledger — install, test, single-test-file,
 typecheck, lint, format, build, e2e — and **run each one now** to prove it works on a clean
-tree. From here on, **green means every contract command exits 0**, nothing looser, and the
-contract block is quoted verbatim into every Phase 3 subagent prompt.
+tree. From here on, **green means every contract command exits 0**, nothing looser.
+
+**Test log isolation:** Direct all contract command outputs to `.deep-plan/contract.log` (e.g. `<cmd> > .deep-plan/contract.log 2>&1`). Never dump full test logs into the main chat window. If a contract command fails, inspect only the tail/failure stack (`tail -n 40 .deep-plan/contract.log`).
 
 Greenfield or a repo missing pieces: create them before Phase 2, and make the tooling
 enforce quality rather than the model remembering to — **`/setup-pre-commit`** (lint-staged,
@@ -333,10 +327,9 @@ Execute `tasks.md` **slice by slice sequentially inline** in the main window to 
 - **After a slice passes all its tests, commit it individually** on the feature branch with a clear conventional-commit message. One passing slice = one commit.
 - **Update `.deep-plan/state.md` with 1 line per slice** (`- [x] <slice> — <sha> — PASS`). Keep `state.md` under **60 lines total** (Lever 3).
 - Halt on any test failure; fix before moving on. Never commit red.
-- If context grows large during multi-slice execution, run `/compact` mid-phase.
+- **Mid-phase compaction:** Run `/compact` every 3–4 completed slices (or whenever context window exceeds ~50k tokens) during Phase 3 inline execution to preserve prompt-cache hit rates.
 
-**Last step of Phase 3 — code quality gate.** All slices committed and green ≠ done. Review
-the whole feature diff for anti-patterns and standards drift before Phase 4:
+**Last step of Phase 3 — code quality gate.** All slices committed and green ≠ done. Record the current commit SHA as `<phase-3-end-sha>`. Review the whole feature diff for anti-patterns and standards drift before Phase 4:
 
 1. **Run Matt Pocock's dual-axis `code-review` skill** — Standards (repo standards + the
    Fowler code-smell baseline) and Spec (does the diff do what `spec.md` asked?), using **subagents on the strong model** (Lever 2).
@@ -353,7 +346,7 @@ the whole feature diff for anti-patterns and standards drift before Phase 4:
    Refactor under green tests (`/tdd` IMPROVE step); commit as `refactor:` / `fix:`.
    **Write detailed finding notes and explanations of skipped findings to `.deep-plan/state-findings.md`** (Lever 3).
    In `state.md`, record only the high-level gate status line (`Quality gate: PASS with N findings in state-findings.md`).
-4. Re-run the contract. Phase 3 closes only when it is green **after** the fixes.
+4. Re-run the contract. Phase 3 closes only when it is green **after** the fixes. Record `<phase-3-end-sha>`.
    Update `.deep-plan/state.md` and execute `/compact` (Lever 1) before Phase 4.
 
 ---
@@ -364,17 +357,16 @@ A dedicated final verification gate:
 
 1. Run the **full verification contract** plus **e2e / integration tests** appropriate to the
    stack (Playwright for web flows; equivalent otherwise) to validate the implementation
-   **against the spec**, not just against the unit tests. Send long output to a file and
-   read the failures out of it — a green suite needs one line, not its log.
+   **against the spec**, not just against the unit tests. Direct output to `.deep-plan/contract.log` and read failures via `tail -n 40 .deep-plan/contract.log` — a green suite needs one line, not its log.
 2. **Run the actual app** — `/run` it. Tests passing is not the same as the thing working.
    Drive the P1 journeys end to end. For UI work, screenshot each built screen and compare
-   against the approved mock via a **read-only verification subagent** (Lever 2). Screenshots are expensive; subagents judge them and return a verdict so images never load into the main window.
-3. **Security pass.** Run **`/security-review`** via a subagent over the feature diff (Lever 2).
+   against the approved mock via a **read-only verification subagent** (**Cheap Model**). Screenshots are expensive; subagents judge them and return a verdict so images never load into the main window.
+3. **Security pass.** Run **`/security-review`** via a subagent (**Cheap Model**) over the feature diff.
    Anything touching auth, user input, secrets, file paths, SQL, or external calls gets
    scrutiny; treat criticals as blocking, not as debrief material. Log detailed findings into `.deep-plan/state-findings.md`.
-4. If anything fails or a requirement is unmet, loop back: fix, re-test, re-commit. For any
-   hard failure or performance regression, **run the `/diagnosing-bugs` skill** to run a
-   disciplined diagnosis loop instead of guessing.
+4. **Fix loop & Stash Safety Net:** If anything fails or a requirement is unmet, loop back: fix, re-test, re-commit.
+   - **Safety Net:** If a fix attempt fails or breaks existing tests, execute `git reset --hard` back to the last passing slice commit before trying another hypothesis. Never layer fixes on top of broken attempts.
+   - For any hard failure or performance regression, **run the `/diagnosing-bugs` skill** on the **Strong Model** to run a disciplined diagnosis loop instead of guessing.
 5. **Loop budget — the escape hatch.** Track attempts per distinct failure in `state.md`.
    **Three failed attempts on the same failure and you stop**: no fourth guess. Report to
    the user what you tried, what `/diagnosing-bugs` established, your best hypothesis, and
@@ -383,8 +375,7 @@ A dedicated final verification gate:
    whole session; the budget is what makes the loop terminate.
 6. **Keep looping** (within budget) until every success criterion in the Spec Brief and
    every acceptance scenario passes.
-7. **Second code quality gate — after the loop is green.** Re-run the `code-review` subagents
-   exactly as in the Phase 3 gate.
+7. **Second code quality gate — diff-scoped:** Re-run `code-review` subagents on the **Strong Model**, strictly scoped to the diff introduced during Phase 4 fixes (`git diff <phase-3-end-sha>..HEAD`).
    - Fix findings, re-run contract + e2e, re-commit. Log findings to `.deep-plan/state-findings.md`.
    - Feature is "done" only when contract is green **and** code-review comes back clean.
 8. Update `.deep-plan/state.md` and execute `/compact` (Lever 1) before Phase 5 debrief.
@@ -434,7 +425,11 @@ the _next_ feature cheaper than this one.
 - Strictly cap `.deep-plan/state.md` to ≤60 lines total (1 line per slice). Detailed findings, gate reports, and trace logs go into `.deep-plan/state-findings.md` (Lever 3).
 - Execute `/clear` immediately after Phase 0.5 mock sign-off before starting Phase 1 (Lever 5).
 - Execute `/compact` at every phase boundary (after R, Phase 0, Phase 1, Phase 2, Phase 3, Phase 4) (Lever 1).
-- Execute Phase 3 implementation slices sequentially inline using `/tdd`; reserve subagents exclusively for independent read-only tasks (recon fan-out, code quality gates, security review, verification/screenshot review) (Lever 2).
+- Execute Phase 3 implementation slices sequentially inline using `/tdd`; run `/compact` every 3–4 slices mid-phase. Reserve subagents exclusively for independent read-only tasks (recon fan-out, code quality gates, security review, verification/screenshot review) (Lever 2).
+- Route subagents by model tier: Cheap Model (`haiku`/`flash`) for search, security, and verification; Strong Model (`opus`/`pro`) for architecture, quality gates, and bug diagnosis.
+- Direct test and contract outputs to `.deep-plan/contract.log`; read only `tail -n 40` into context on failure.
+- If a Phase 4 fix attempt fails or breaks tests, `git reset --hard` to the last passing slice commit before trying another hypothesis.
+- Scope Phase 4 second code-review gate strictly to `git diff <phase-3-end-sha>..HEAD`.
 - A decision that exists only in the conversation is lost — write it to its file first.
 - Never write production code before the Spec Brief is signed off (Phase 0), the mock is
   approved if there's a UI (Phase 0.5), and tasks exist (Phase 2). The Phase 0.5 mock is the
@@ -453,4 +448,3 @@ the _next_ feature cheaper than this one.
 - Reuse before you build: the Recon Note's reuse list beats a fresh implementation.
 - No new runtime dependency without saying so and why; subagents may not add one unasked.
 - One commit per passing slice; never commit failing tests; never push without being asked.
-- Prefer the cheapest capable model for isolated subagents; strong model for design + review.

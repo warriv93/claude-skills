@@ -19,6 +19,6 @@ Ask user how to proceed (merge, iterate, park).
 Runs once user answers with merge or iterate:
 
 1. **Docs true again:** update `CONTEXT.md`, glossary, ADRs, README.
-2. **Write back to `CLAUDE.md`:** fold in contract commands, layering rules, patterns to follow, gotchas to avoid.
+2. **Write back to `CLAUDE.md` (Strict ≤60-line cap):** Fold in essential contract commands, layering rules, patterns, and traps to avoid. Keep `CLAUDE.md` strictly under 60 lines total to prevent a permanent per-turn token tax. Prune stale rules.
 3. **Close ledger:** mark final status in `state.md`, then archive or delete `.deep-plan/state.md` and `.deep-plan/state-findings.md`.
 4. **PR:** Push branch and open PR ONLY when explicitly requested by user.

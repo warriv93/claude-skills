@@ -61,6 +61,10 @@ Execute phases in order. When entering a phase, use `view_file` to read its inst
 - Read `state.md` first; resume, never restart.
 - Execute `/clear` immediately after Phase 0.5 mock sign-off.
 - Execute `/compact` at phase boundaries and every 3-4 slices in Phase 3.
+- Subagent dispatches: static rules at TOP prefix (prompt cache alignment) + mandate `NO_PREAMBLE`.
 - Pipe contract command outputs to `.deep-plan/contract.log`; read only `tail -n 40` on failure.
+- Extract only current slice task lines from `tasks.md` in Phase 3; do not load full file.
 - `git reset --hard` to last passing slice if a Phase 4 fix attempt fails or breaks tests.
+- Scope Phase 4 second code-review gate strictly to `git diff <phase-3-end-sha>..HEAD`.
+- Keep `CLAUDE.md` strictly under ≤60 lines during Phase 6 landing.
 - One commit per passing slice; never commit red code; never push unasked.

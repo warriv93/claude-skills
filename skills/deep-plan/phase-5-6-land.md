@@ -19,6 +19,6 @@ Ask user how to proceed (merge, iterate, park).
 Runs once user answers with merge or iterate:
 
 1. **Docs true again:** update `CONTEXT.md`, glossary, ADRs, README.
-2. **Write back to `CLAUDE.md` (Strict ≤60-line cap):** Fold in essential contract commands, layering rules, patterns, and traps to avoid. Keep `CLAUDE.md` strictly under 60 lines total to prevent a permanent per-turn token tax. Prune stale rules.
+2. **Write back to `CLAUDE.md`:** Update `CLAUDE.md` with new verification contract commands or new layering conventions. **Crucial rule:** Preserve existing hard-won rules and bug-prevention traps — never arbitrarily prune active rules to hit an arbitrary line count. Correct any lines that newly shipped code contradicts. Keep new additions terse and additive. If `CLAUDE.md` grows excessively large, split specialized domain rules into `.claude/rules/` rather than deleting established project knowledge.
 3. **Close ledger:** mark final status in `state.md`, then archive or delete `.deep-plan/state.md` and all `.deep-plan/findings-phase-*.md` files.
 4. **PR:** Push branch and open PR ONLY when explicitly requested by user.

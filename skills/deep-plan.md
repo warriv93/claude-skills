@@ -66,5 +66,5 @@ Execute phases in order. When entering a phase, use `view_file` to read its inst
 - Extract only current slice task lines from `tasks.md` in Phase 3; do not load full file.
 - `git reset --hard` to last passing slice if a Phase 4 fix attempt fails or breaks tests.
 - Scope Phase 4 second code-review gate strictly to `git diff <phase-3-end-sha>..HEAD`.
-- Keep `CLAUDE.md` strictly under ≤60 lines during Phase 6 landing.
+- Preserve hard-won rules in `CLAUDE.md`; correct contradicted lines during Phase 6 landing (do not arbitrarily prune active rules).
 - One commit per passing slice; never commit red code; never push unasked.

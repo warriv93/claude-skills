@@ -1,22 +1,21 @@
 # Phase 1 — Deep Modular Architecture & Verification Contract
 
-## Phase 1 — Deep Modular Architecture
+## Architecture
 
-**Run `/codebase-design` skill** to structure deep modules with small interfaces, clean seams, and high testability:
+Run `/codebase-design` to shape the feature into deep modules:
 
-- Decompose into deep modules with single responsibilities and narrow interfaces (1–3 methods).
-- Inject dependencies via constructors so core logic is pure and testable without heavy mocks.
-- Define seams that enable slices to be built and tested in isolation.
-- Honor platform constraints confirmed in Phase 0 (edge, serverless, document store, etc.).
-- Reuse `CONTEXT.md` / ADRs and Recon Note's reuse list. Derive view/state seams from signed-off mock (if UI).
-- Capture architecture sketch feeding into spec/plan.
+- Single responsibility per module, narrow interface (1–3 methods).
+- Dependencies injected through constructors, so core logic is pure and testable without heavy mocks.
+- Seams that let each slice be built and tested in isolation.
+- Platform constraints confirmed in Phase 0 honored (edge, serverless, document store…).
+- Built on `CONTEXT.md`, ADRs and the recon note's reuse list; view/state seams derived from the signed-off mock (UI work).
 
-## Pin the Verification Contract
+Write the result to `.deep-plan/architecture.md`: modules, interfaces, seams, and which existing code each reuses. Phase 2 plans from this file.
 
-Pin exact command strings into `.deep-plan/state.md` (install, test, single-test-file, typecheck, lint, format, build, e2e) and run each command now to confirm clean 0 exit code.
+## Pin the verification contract
 
-**Test Log Isolation:** Direct all contract outputs to `.deep-plan/contract.log` (e.g. `<cmd> > .deep-plan/contract.log 2>&1`). Never dump full test logs into the chat window. On failure, inspect only `tail -n 40 .deep-plan/contract.log`.
+The **contract** is the exact command set: install, test, single-test-file, typecheck, lint, format, build, e2e. Pin each string into the ledger and run each one now (per the contract-run rule) until it exits 0.
 
-Tooling enforcement: Run **`/setup-pre-commit`** and **`git-guardrails-claude-code`** if missing.
+Install `/setup-pre-commit` and `git-guardrails-claude-code` if the repo lacks them.
 
-Update `.deep-plan/state.md` and execute `/compact` before Phase 2.
+Checkpoint.

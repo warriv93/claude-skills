@@ -1,24 +1,22 @@
-# Phase 5 & 6 — Human-in-the-loop Debrief & Landing
+# Phase 5 & 6 — Debrief & Landing
 
-## Phase 5 — Human-in-the-loop Review
+## Phase 5 — Human-in-the-loop debrief
 
-Give user a clear debrief compiled from `state.md`, `.deep-plan/findings-phase-3.md`, `.deep-plan/findings-phase-4.md`, and `git log`:
+Compile from the ledger, `findings-phase-3.md`, `findings-phase-4.md` and `git log`:
 
-- **Accomplished:** delivered features mapped to Spec Brief.
-- **Compromises made:** divergence from ideal, skipped code-review findings (from `findings-phase-3.md` and `findings-phase-4.md`).
-- **Potential weak points:** fragile areas, thin test coverage.
-- **Inputs needed:** API keys, env vars, secrets, accounts required to run.
-- **Future improvements:** next concrete steps.
+- **Accomplished:** delivered features mapped to the Spec Brief.
+- **Compromises:** divergence from the ideal; every skipped code-review finding.
+- **Weak points:** fragile areas, thin test coverage.
+- **Inputs needed:** API keys, env vars, secrets, accounts required to run it.
+- **Next steps:** concrete follow-ups.
 
-Ask user how to proceed (merge, iterate, park).
-
----
+Ask the user: merge, iterate, or park.
 
 ## Phase 6 — Land it
 
-Runs once user answers with merge or iterate:
+Runs when the user answers merge or iterate:
 
-1. **Docs true again:** update `CONTEXT.md`, glossary, ADRs, README.
-2. **Write back to `CLAUDE.md`:** Update `CLAUDE.md` with new verification contract commands or new layering conventions. **Crucial rule:** Preserve existing hard-won rules and bug-prevention traps — never arbitrarily prune active rules to hit an arbitrary line count. Correct any lines that newly shipped code contradicts. Keep new additions terse and additive. If `CLAUDE.md` grows excessively large, split specialized domain rules into `.claude/rules/` rather than deleting established project knowledge.
-3. **Close ledger:** mark final status in `state.md`, then archive or delete `.deep-plan/state.md` and all `.deep-plan/findings-phase-*.md` files.
-4. **PR:** Push branch and open PR ONLY when explicitly requested by user.
+1. **Docs true again:** `CONTEXT.md`, glossary, ADRs, README.
+2. **Write back to `CLAUDE.md`:** add new contract commands and layering conventions, tersely. Existing rules are hard-won bug traps — keep every one; edit only lines the shipped code contradicts. When the file grows unwieldy, move domain-specific rules into `.claude/rules/`.
+3. **Close the ledger:** mark the final status, then archive or delete this feature's `.deep-plan/` files. `project.md` belongs to `/deep-app-plan` and stays.
+4. **PR:** push and open it when the user asks for it.

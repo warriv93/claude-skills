@@ -1,12 +1,13 @@
 # Phase 4 — Verification Loop & Security Gate
 
-1. Run **full verification contract + e2e tests**. Direct output to `.deep-plan/contract.log` (`<cmd> > .deep-plan/contract.log 2>&1`) and inspect failures via `tail -n 40 .deep-plan/contract.log`.
-2. **Drive the real app (`/run`)**: check P1 journeys. For UI work, screenshot built screens and compare against mock via read-only subagent (**Cheap Model**).
-3. **Security pass:** Run **`/security-review`** via subagent (**Cheap Model**) over feature diff (`git diff --stat` first). Place static rules at top of prompt; mandate **`NO_PREAMBLE`**. Treat criticals as blocking. Log findings to `.deep-plan/findings-phase-4.md`.
-4. **Fix Loop & Stash Safety Net:** If anything fails or requirement is unmet, fix, re-test, re-commit.
-   - **Safety Net:** If a fix attempt fails or breaks tests, execute `git reset --hard` back to the last passing slice commit before trying another hypothesis. Never layer fixes on top of broken attempts.
-   - For hard failures or regressions, run **`/diagnosing-bugs`** on **Strong Model**.
-5. **Loop Budget (Escape Hatch):** Track attempts per failure in `state.md`. Stop after **3 failed attempts** on same failure or 2 rounds of gate churn, and report to user.
-6. Keep looping within budget until all success criteria pass.
-7. **Second Code Quality Gate (Diff-scoped):** Re-run `code-review` subagents on **Strong Model**, strictly scoped to diff introduced during Phase 4 fixes (`git diff <phase-3-end-sha>..HEAD`). Use prompt cache prefix alignment (`static instructions top`) and **`NO_PREAMBLE`**. Log findings to `.deep-plan/findings-phase-4.md`.
-8. Update `.deep-plan/state.md` and execute `/compact` before Phase 5.
+Done when every success criterion in `spec-brief.md` passes — or the loop budget is spent and reported.
+
+1. **Full contract + e2e.**
+2. **Drive the real app (`/run`)** through every P1 journey. UI work: screenshot the built screens and have a cheap subagent compare them against the mock.
+3. **Security pass:** `/security-review` as a cheap subagent under the subagent protocol, over the feature diff. Criticals block. Log to `.deep-plan/findings-phase-4.md`.
+4. **Fix loop:** for each failure or unmet requirement, fix, re-test, re-commit.
+   - Each hypothesis starts from the last green slice commit: a failed attempt, or one that breaks tests, is discarded with `git reset --hard <last-green-sha>` before the next.
+   - Hard failures and regressions → `/diagnosing-bugs` as a strong subagent.
+   - **Loop budget:** count attempts per failure in the ledger. At 3 failed attempts on one failure, or 2 rounds of gate churn, stop and report to the user.
+5. **Second code-review gate:** `code-review` strong subagents under the subagent protocol, scoped to `git diff <phase-3-end-sha>..HEAD`. Log to `.deep-plan/findings-phase-4.md`.
+6. Checkpoint.

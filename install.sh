@@ -1,16 +1,28 @@
 #!/usr/bin/env bash
-# Symlink every skill in this repo into ~/.claude so Claude Code picks them up
-# as both skills and slash commands. Re-run any time; it's idempotent.
+# Symlink every skill folder in this repo into ~/.claude/skills so Claude Code
+# picks it up (and exposes it as /<name>). If Antigravity is installed, also link
+# the skills plus the gemini/ helpers into ~/.gemini/config/skills.
+# Re-run any time; it's idempotent.
 set -euo pipefail
 
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-mkdir -p "$HOME/.claude/skills" "$HOME/.claude/commands"
 
-for f in "$repo_dir"/skills/*.md; do
-  name="$(basename "$f")"
-  ln -sf "$f" "$HOME/.claude/skills/$name"
-  ln -sf "$f" "$HOME/.claude/commands/$name"
-  echo "linked $name -> skills/ and commands/"
-done
+link_all() { # <target dir> <source dir>...
+  local target="$1"; shift
+  mkdir -p "$target"
+  for src in "$@"; do
+    for d in "$src"/*/; do
+      name="$(basename "$d")"
+      ln -sfn "${d%/}" "$target/$name"
+      echo "linked $name -> $target/$name"
+    done
+  done
+}
 
-echo "Done. Type /${name%.md} in Claude Code (restart the session to pick up new skills)."
+link_all "$HOME/.claude/skills" "$repo_dir/skills"
+
+if [ -d "$HOME/.gemini/config" ]; then
+  link_all "$HOME/.gemini/config/skills" "$repo_dir/skills" "$repo_dir/gemini"
+fi
+
+echo "Done. Restart Claude Code / Antigravity to pick up new skills."

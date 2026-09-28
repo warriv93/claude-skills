@@ -1,14 +1,14 @@
 # Phase 2 — SDD+TDD Hand-off (speckit)
 
-Invoke **`speckit-custom-plan-tdd-sdd`** skill and drive its workflow, seeded with Spec Brief, approved mock (if any), and Phase 1 architecture:
+Invoke the `speckit-custom-plan-tdd-sdd` skill, seeded with `spec-brief.md`, the mock URL (if any) and `architecture.md`, and drive its workflow:
 
-1. `/speckit.constitution` — declare test-first (TDD) and spec-first (SDD) non-negotiable.
-2. `/speckit.specify` — generate `spec.md` and create feature branch. (≤3 `[NEEDS CLARIFICATION]`).
-3. `/speckit.clarify` — resolve remaining ambiguities.
-4. `/speckit.checklist` — generate domain checklists.
-5. `/speckit.plan` — technical blueprint honoring Phase 1 modular architecture.
-6. `/speckit.tasks` — dependency-ordered, TDD-structured task list (`tasks.md`), sliced by user story with tests first in every slice.
+1. `/speckit.constitution` — test-first (TDD) and spec-first (SDD) declared non-negotiable.
+2. `/speckit.specify` — `spec.md` plus the feature branch; ≤3 `[NEEDS CLARIFICATION]` markers.
+3. `/speckit.clarify` — every remaining marker resolved.
+4. `/speckit.checklist` — domain checklists.
+5. `/speckit.plan` — technical blueprint following `architecture.md`.
+6. `/speckit.tasks` — dependency-ordered `tasks.md`, sliced by user story, tests first in every slice.
 
-_(Fallback if speckit unavailable: run equivalent SDD+TDD steps inline, or `/to-spec` + `/to-tickets`)._
+speckit unavailable → run the equivalent steps inline, or `/to-spec` + `/to-tickets`.
 
-`tasks.md` on disk closes the phase. Update `.deep-plan/state.md` and execute `/compact` before Phase 3.
+Checkpoint.

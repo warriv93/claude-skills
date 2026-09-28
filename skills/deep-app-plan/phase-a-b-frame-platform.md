@@ -1,30 +1,31 @@
-# Phase A & B — Product Framing & Platform Interview
+# Phase A & B — Product Frame & Platform Interview
 
-## Phase A — Frame the Product
+## Phase A — Frame the product
 
-1. Restate idea in two lines: target user, primary job.
-2. **Grill product frame (`/grilling`):**
-   - Who is first user and primary job?
-   - What does v1 do — and **what does v1 deliberately NOT do**?
+1. Restate the idea in two lines: target user, primary job.
+2. **Grill the frame (`/grilling`):**
+   - Who is the first user, and what is their primary job?
+   - What does v1 do — and what does v1 deliberately leave out?
    - One measurable success signal.
-   - Competitors/existing alternatives and why they aren't used.
-3. **Cut into milestones:** M0 walking skeleton, then 1 milestone per deployable capability.
-4. Write `.deep-plan/project.md`. Get explicit sign-off on v1 scope. **Do not proceed without confirmation.**
+   - Existing alternatives, and why the user passes on them.
+3. **Cut milestones:** M0 walking skeleton, then one milestone per deployable capability.
+4. Write the project ledger.
+5. **Gate:** the user explicitly signs off the v1 scope.
 
----
+## Phase B — Platform interview (one-way doors)
 
-## Phase B — Platform Interview (One-Way Doors)
-
-Settled before architecture. Skip anything user already stated. Ask remaining questions in **one batched pass** (`AskUserQuestion`) with recommended defaults:
+Ask everything the user has not already stated in **one batched `AskUserQuestion` pass**, each with a recommended default:
 
 - **Home:** GitHub/GitLab, public/private, org, licence (MIT default).
 - **Hosting:** Pages / Workers / Vercel / Railway / Supabase / Firebase.
-- **Database:** Postgres / SQLite / D1 / Firestore. Backups & migration path.
-- **Auth:** Email+Password / Provider OAuth / Managed (Clerk, Supabase Auth).
-- **Environments & CI:** GitHub Actions workflow running verification contract on push/PR.
-- **Auto-deploy trigger:** Platform git integration vs GitHub Actions CLI deploy. Rollback mechanism.
-- **Domain & Secrets:** DNS holder, env var storage & access.
-- **Spend Policy:** Build-time (free/allowed), Runtime (free/allowed), Hosting ceiling ($ cap).
-- **Reality Check & Observability:** Expected scale, solo/team, lifespan, error tracking.
+- **Database:** Postgres / SQLite / D1 / Firestore; backups and migration path.
+- **Auth:** email+password / provider OAuth / managed (Clerk, Supabase Auth).
+- **CI:** GitHub Actions running the contract on push/PR.
+- **Auto-deploy:** platform git integration vs. Actions CLI deploy; rollback mechanism.
+- **Domain & secrets:** DNS holder; where env vars live and who can read them.
+- **Spend policy:** build-time, runtime, hosting ceiling ($ cap).
+- **Reality check & observability:** expected scale, solo/team, lifespan, error tracking.
 
-Record answers as ADRs via `/domain-modeling` and in `.deep-plan/project.md`. Get confirmation before Phase C.
+Record the answers as ADRs via `/domain-modeling` and in the ledger's Platform block.
+
+**Gate:** the user confirms the platform.

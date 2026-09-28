@@ -1,24 +1,19 @@
-# Phase 3 — Sequential Inline Execution & Quality Gates
+# Phase 3 — Slice Execution & Quality Gate
 
-Execute `tasks.md` **slice by slice sequentially inline** in the main window:
+## Slices
 
-- **Slice-Isolated Task Loading:** Extract and load ONLY the specific task lines for the current slice from `tasks.md` into memory. Do not load the entire `tasks.md` file on every slice.
-- Execute each slice using `/tdd` discipline: failing tests first (RED), minimum implementation (GREEN), refactor (IMPROVE).
-- **One passing slice = one commit** on feature branch with conventional commit message. Never commit red.
-- **Update `.deep-plan/state.md` with 1 line per slice** (`- [x] <slice> — <sha> — PASS`). Keep `state.md` strictly under 60 lines total.
-- **Mid-Phase Compaction:** Run `/compact` every 3–4 completed slices (or whenever context window exceeds ~50k tokens) during Phase 3 inline execution.
+Work through `tasks.md` one slice at a time, inline in the main context:
 
-## Phase 3 Code Quality Gate
+1. Load only the current slice's task lines from `tasks.md`.
+2. `/tdd`: failing tests first (RED), minimum implementation (GREEN), refactor (IMPROVE).
+3. Green → commit, and add the slice's ledger line.
 
-All slices committed and green ≠ done. Record current commit SHA as `<phase-3-end-sha>`.
+Every slice committed green is not yet done — the gate follows.
 
-1. **Run Matt Pocock's dual-axis `code-review` skill** (Standards + Spec axes) using subagents on the **Strong Model** (`opus`/`pro`).
-2. **Subagent Protocol & Prompt Cache Alignment:**
-   - Place static rules/standards at the TOP prefix of subagent prompts; place diffs at the bottom for 90%+ prompt cache hits.
-   - Mandate **`NO_PREAMBLE`**: subagents return raw findings markdown table only, zero conversational intro or concluding remarks.
-3. Fixed point = branch point (`git merge-base main HEAD`). Subagents run `git diff --stat` first to identify modified files before fetching full line diffs.
-4. **Fix what it finds:** standards violations, missing spec items, scope creep, code smells. Refactor under green tests (`/tdd` IMPROVE); commit as `refactor:` / `fix:`.
-   - **Write detailed finding notes and explanations of skipped findings to `.deep-plan/findings-phase-3.md`** (Phase-isolated findings file).
-   - In `state.md`, record only high-level status line (`Quality gate: PASS with N findings in findings-phase-3.md`).
-5. Re-run verification contract. Phase 3 closes only when green after fixes. Record `<phase-3-end-sha>`.
-6. Update `.deep-plan/state.md` and execute `/compact` before Phase 4.
+## Quality gate
+
+1. Run the dual-axis `code-review` skill (Matt Pocock; Standards + Spec axes) as strong subagents under the subagent protocol, against the branch point (`git merge-base main HEAD`).
+2. **Fix what it finds** — standards violations, missing spec items, scope creep, smells — refactoring under green tests (`/tdd` IMPROVE); commit as `refactor:` / `fix:`.
+3. Log every finding, and the reason for each one skipped, to `.deep-plan/findings-phase-3.md`. The ledger gets one line: `Quality gate: PASS with N findings in findings-phase-3.md`.
+4. Re-run the full contract until green. Record the HEAD sha in the ledger as `phase-3-end-sha`.
+5. Checkpoint.

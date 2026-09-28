@@ -1,118 +1,58 @@
 # claude-skills
 
-Personal [Claude Code](https://claude.com/claude-code) skills / slash commands, version-controlled so they're easy to edit, update, and share.
+Personal [Claude Code](https://claude.com/claude-code) skills, version-controlled so they're easy to edit, update, and share.
 
 ## Skills
 
-| Skill                               | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`/deep-plan`](skills/deep-plan.md) | Front-door orchestrator: **grills** you to lock the spec, puts a throwaway clickable **mock** in front of you for any UI work, designs a deep-modular architecture, then drives spec-driven (SDD) + test-driven (TDD) implementation in context-isolated phases run by cheap subagents, one commit per passing slice, a looping verification gate, and a final human-in-the-loop review. Free — no paid API calls. Calls the `speckit-custom-plan-tdd-sdd` skill for the SDD+TDD engine. |
+| Skill | What it does |
+| --- | --- |
+| [`/deep-plan`](skills/deep-plan/SKILL.md) | Builds one feature into an existing codebase: recon, **grill** to lock the spec, a throwaway clickable **mock** for UI work, deep-modular architecture, SDD+TDD slices (one commit per green slice), two code-review gates, a looping verification + security gate, and a human-in-the-loop debrief. Phase instructions load on demand. |
+| [`/deep-app-plan`](skills/deep-app-plan/SKILL.md) | Builds a whole app from nothing: product frame, one-way platform decisions, scaffold + CI, an M0 walking skeleton live in prod, then each milestone through `/deep-plan`, ending on a launch-readiness checklist. |
+
+## Layout
+
+Each skill is a folder: `skills/<name>/SKILL.md` is the entry point (frontmatter + phase router) and the sibling `phase-*.md` files are read only when the agent enters that phase. Links between them are relative, so the folder works wherever it is linked from.
 
 ## Install (symlink — live editing)
 
-Skills in this repo are symlinked into `~/.claude/` so edits here take effect immediately.
-Running Claude Code exposes a file as a **skill** when it's under `~/.claude/skills/` and as
-a **slash command** when it's under `~/.claude/commands/`, so we link into both.
-
 ```bash
-git clone https://github.com/warriv93/claude-skills.git "$HOME/Library/CloudStorage/SynologyDrive-1/aiDir/claude-skills"
-
-for f in "$HOME"/Library/CloudStorage/SynologyDrive-1/aiDir/claude-skills/skills/*.md; do
-  name="$(basename "$f")"
-  ln -sf "$f" "$HOME/.claude/skills/$name"
-  ln -sf "$f" "$HOME/.claude/commands/$name"
-done
-```
-
-Then in Claude Code type `/deep-plan` (or let the skill auto-trigger from its description).
-
-## Editing an existing skill
-
-Edit the file under `skills/`, then `git commit && git push`. Because the file is symlinked
-into `~/.claude/`, the change is already live — no reinstall.
-
-- **Body-only tweak** to an existing skill → usually picked up the next time the skill runs.
-- **New skill file, or a change to the `description:` frontmatter** → start a fresh Claude Code
-  session so it's re-discovered (see [Applying changes](#applying-changes--restarting)).
-
-## Creating a new skill
-
-A skill is just one Markdown file with YAML frontmatter. Follow these steps.
-
-### 1. Create the file
-
-Create `skills/<name>.md` (the `<name>` becomes the `/<name>` slash command). Use this
-template:
-
-```markdown
----
-description:
-  One or two sentences describing WHAT the skill does and WHEN to use it. This
-  text is how Claude decides to auto-trigger the skill, so include the trigger phrases /
-  slash-command name and the kind of request it handles.
-argument-hint: <what to type after the command, e.g. a description or path>
----
-
-# /<name> — short title
-
-Instructions to Claude, written as if briefing an engineer. Be explicit and ordered.
-
-## Step 1 — ...
-
-## Step 2 — ...
-```
-
-Guidelines:
-
-- **`description:`** is the most important line — it drives both discovery in the skill list
-  and auto-triggering. Name the `/command` and the situations it applies to.
-- **`argument-hint:`** is optional; it shows a placeholder when you type the command.
-- The body is plain instructions. To make one skill **call another**, tell Claude to invoke
-  the other skill by name (e.g. "Invoke the `speckit-custom-plan-tdd-sdd` skill"), the way
-  `/deep-plan` does.
-- Keep the filename kebab-case with no spaces; `skills/my-cool-skill.md` → `/my-cool-skill`.
-
-### 2. Install it (create the symlinks)
-
-Run the installer once — it symlinks every file in `skills/` into both `~/.claude/skills/`
-and `~/.claude/commands/` (idempotent, safe to re-run):
-
-```bash
+git clone git@github.com:warriv93/claude-skills.git
+cd claude-skills
 ./install.sh
 ```
 
-### 3. Apply it
+`install.sh` symlinks every `skills/<name>/` folder to `~/.claude/skills/<name>` (idempotent). Edits in the repo are live immediately.
 
-Start a fresh Claude Code session (see below), then type `/<name>` — or just describe the
-task and let the `description:` auto-trigger it.
+**Antigravity / Gemini:** if `~/.gemini/config/` exists, `install.sh` also links the skills into `~/.gemini/config/skills/`, together with [`claude-tool-map`](gemini/claude-tool-map/SKILL.md), which translates the Claude Code tools, model tiers and slash commands the skills mention into their Antigravity equivalents. Each skill tells a non-Claude agent to load it first.
 
-### 4. Commit & share
+## Editing
 
-```bash
-git add -A && git commit -m "feat: add /<name> skill" && git push
-```
+- **Body or phase-file change** → picked up the next time the skill runs.
+- **New skill, or a changed `description:`** → start a fresh Claude Code session so it's re-discovered.
 
-## Applying changes / restarting
+Skill writing follows the [`writing-for-agents`](https://github.com/mattpocock/skills/tree/main/skills/productivity/writing-for-agents) reference; [CLAUDE.md](CLAUDE.md) tells Claude to load it and lists this repo's conventions.
 
-There is **no `/restart` command**. To reload skill definitions from disk:
+## Creating a new skill
 
-- **CLI:** quit with `/exit` (or `Ctrl+D`), then run `claude` again.
-- **VS Code extension:** close the Claude Code panel and reopen it (Command Palette →
-  "Claude Code", or `Cmd+Esc` / `Ctrl+Esc`). If it's stubborn, Command Palette →
-  **Developer: Reload Window**.
+1. Create `skills/<name>/SKILL.md`:
 
-`/clear` resets the current conversation but does not reliably re-scan new/changed skill
-files — use a full relaunch when in doubt.
+   ```markdown
+   ---
+   name: <name>
+   description: <What it does, leading word first>. Use for "/<name>", <each distinct trigger>.
+   argument-hint: <what to type after the command>
+   ---
 
-## Notes on this location
+   # /<name>
 
-This repo lives in a Synology cloud-synced folder, so saves and `.git` changes sync to the
-NAS (handy for backup). If Synology ever leaves a conflict copy like
-`deep-plan (conflicted).md`, delete it — the symlinks always point at the real filename.
+   <steps, each ending on a completion criterion>
+   ```
+
+   For a skill only you fire by hand, add `disable-model-invocation: true` and make the description a one-line human summary; it then costs no context.
+
+2. `./install.sh`, restart the session, type `/<name>`.
 
 ## Dependencies
 
-- **`/deep-plan`** calls the **`speckit-custom-plan-tdd-sdd`** skill for the SDD+TDD engine.
-  Optional (used only if present): the `openspec` CLI, a `grill-with-docs` skill, and
-  `prototype` / `frontend-design` / `dataviz` for the Phase 0.5 UI mock — the workflow
-  degrades gracefully when they're absent.
+- **`/deep-plan`** calls `speckit-custom-plan-tdd-sdd` (SDD+TDD engine) and `code-review` (Matt Pocock's dual-axis). It also uses these when present: `/wayfinder`, `/grill-with-docs`, `/research`, `/prototype`, `frontend-design`, `dataviz`, `/codebase-design`, `/setup-pre-commit`, `git-guardrails-claude-code`, `/tdd`, `/security-review`, `/run`, `/diagnosing-bugs`, `/to-spec`, `/to-tickets`.
+- **`/deep-app-plan`** calls `/deep-plan`, plus `/grilling`, `/domain-modeling`, `/writing-for-agents` and `/security-review`.

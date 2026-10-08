@@ -7,6 +7,7 @@ Personal [Claude Code](https://claude.com/claude-code) skills, version-controlle
 | Skill | What it does |
 | --- | --- |
 | [`/deep-plan`](skills/deep-plan/SKILL.md) | Builds one feature into an existing codebase: recon, **grill** to lock the spec, a throwaway clickable **mock** for UI work, deep-modular architecture, SDD+TDD slices (one commit per green slice), two code-review gates, a looping verification + security gate, and a human-in-the-loop debrief. Phase instructions load on demand. |
+| [`/orchestrate-plan`](skills/orchestrate-plan/SKILL.md) | Plans a feature as an **epic** through `/deep-plan`, breaks it into **stories** with explicit dependencies, and builds them in parallel, one agent per story in its own worktree (Paseo, or Claude subagents), merging each back under the contract. A live localhost **dashboard** shows the pipeline, a top-down story map, progress, quality and activity, and lets you assign stories or build them all. |
 | [`/deep-app-plan`](skills/deep-app-plan/SKILL.md) | Builds a whole app from nothing: product frame, one-way platform decisions, scaffold + CI, an M0 walking skeleton live in prod, then each milestone through `/deep-plan`, ending on a launch-readiness checklist. |
 
 ## Layout
@@ -57,4 +58,5 @@ Skill writing follows the [`writing-for-agents`](https://github.com/mattpocock/s
 ## Dependencies
 
 - **`/deep-plan`** calls `speckit-custom-plan-tdd-sdd` (SDD+TDD engine) and `code-review` (Matt Pocock's dual-axis). It also uses these when present: `/wayfinder`, `/grill-with-docs`, `/research`, `/prototype`, `frontend-design`, `dataviz`, `/codebase-design`, `/setup-pre-commit`, `git-guardrails-claude-code`, `/tdd`, `/security-review`, `/run`, `/diagnosing-bugs`, `/to-spec`, `/to-tickets`.
+- **`/orchestrate-plan`** calls `/deep-plan`, and dispatches through Paseo's MCP tools when present (`Agent` subagents otherwise). Its dashboard needs only `python3`.
 - **`/deep-app-plan`** calls `/deep-plan`, plus `/grilling`, `/domain-modeling`, `/writing-for-agents` and `/security-review`.

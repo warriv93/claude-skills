@@ -1,0 +1,340 @@
+{
+  "epic": {
+    "id": "team-invites",
+    "title": "Team invites",
+    "summary": "Owners and admins invite people to a team by email; invitees accept through a token link.",
+    "branch": "feat/team-invites",
+    "spec": "spec.md"
+  },
+  "phase": "build",
+  "completed": false,
+  "buildAll": false,
+  "dispatcher": "paseo",
+  "repoUrl": "https://github.com/example/acme",
+  "needsYou": {
+    "reason": "S8 wants to run a migration against the test database",
+    "story": "S8"
+  },
+  "artifacts": [
+    {
+      "name": "Recon note",
+      "path": "recon-note.md",
+      "phase": "recon"
+    },
+    {
+      "name": "Spec brief",
+      "path": "spec-brief.md",
+      "phase": "spec"
+    },
+    {
+      "name": "Architecture",
+      "path": "architecture.md",
+      "phase": "architecture"
+    },
+    {
+      "name": "Spec",
+      "path": "spec.md",
+      "phase": "spec"
+    },
+    {
+      "name": "Tasks",
+      "path": "tasks.md",
+      "phase": "stories"
+    }
+  ],
+  "stories": [
+    {
+      "id": "S1",
+      "title": "Invite data model and migration",
+      "summary": "invites table, token, expiry, status enum",
+      "deps": [],
+      "files": [
+        "db/migrations/0042_invites.sql",
+        "src/invites/model.ts"
+      ],
+      "status": "done",
+      "model": "sonnet",
+      "attempts": 1,
+      "startedAt": "2026-10-08T13:38:32+00:00",
+      "finishedAt": "2026-10-08T14:03:32+00:00",
+      "commits": [
+        {
+          "sha": "3f9a2c1d",
+          "subject": "feat(invites): add invite model and migration",
+          "plus": 142,
+          "minus": 3
+        }
+      ],
+      "brief": "stories/S1.md",
+      "branch": "story/S1",
+      "agent": {
+        "backend": "paseo",
+        "id": "907acf"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Invite email templates",
+      "summary": "MJML templates for invite and reminder",
+      "deps": [],
+      "files": [
+        "emails/invite.mjml",
+        "emails/reminder.mjml"
+      ],
+      "status": "done",
+      "model": "sonnet",
+      "attempts": 1,
+      "startedAt": "2026-10-08T13:38:32+00:00",
+      "finishedAt": "2026-10-08T13:54:32+00:00",
+      "commits": [
+        {
+          "sha": "8b21e0f4",
+          "subject": "feat(email): invite and reminder templates",
+          "plus": 96,
+          "minus": 0
+        }
+      ],
+      "brief": "stories/S2.md",
+      "branch": "story/S2",
+      "agent": {
+        "backend": "paseo",
+        "id": "3f465d"
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Team roles and permission checks",
+      "summary": "owner / admin / member with a can() guard",
+      "deps": [],
+      "files": [
+        "src/auth/roles.ts",
+        "src/auth/can.ts"
+      ],
+      "status": "done",
+      "model": "opus",
+      "attempts": 1,
+      "startedAt": "2026-10-08T13:38:32+00:00",
+      "finishedAt": "2026-10-08T14:16:32+00:00",
+      "commits": [
+        {
+          "sha": "c4d7710a",
+          "subject": "feat(auth): team roles and can() guard",
+          "plus": 211,
+          "minus": 18
+        },
+        {
+          "sha": "e01b9c33",
+          "subject": "refactor(auth): collapse role table",
+          "plus": 12,
+          "minus": 30
+        }
+      ],
+      "brief": "stories/S3.md",
+      "branch": "story/S3",
+      "agent": {
+        "backend": "paseo",
+        "id": "f7eb7d"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Create and revoke invites API",
+      "summary": "POST/DELETE /teams/:id/invites behind can('invite')",
+      "deps": [
+        "S1",
+        "S3"
+      ],
+      "files": [
+        "src/invites/api.ts",
+        "src/invites/service.ts"
+      ],
+      "status": "working",
+      "model": "opus",
+      "attempts": 1,
+      "startedAt": "2026-10-08T14:43:32+00:00",
+      "brief": "stories/S4.md",
+      "branch": "story/S4",
+      "agent": {
+        "backend": "paseo",
+        "id": "0a238a"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Email sender with retries",
+      "summary": "queue-backed sender, exponential backoff",
+      "deps": [
+        "S2"
+      ],
+      "files": [
+        "src/email/sender.ts",
+        "src/queue/jobs.ts"
+      ],
+      "status": "working",
+      "model": "sonnet",
+      "attempts": 1,
+      "startedAt": "2026-10-08T14:50:32+00:00",
+      "brief": "stories/S5.md",
+      "branch": "story/S5",
+      "agent": {
+        "backend": "paseo",
+        "id": "eec3d4"
+      }
+    },
+    {
+      "id": "S8",
+      "title": "Audit log for invite events",
+      "summary": "append-only audit rows for create, revoke, accept",
+      "deps": [
+        "S3"
+      ],
+      "files": [
+        "src/audit/log.ts",
+        "db/migrations/0043_audit.sql"
+      ],
+      "status": "approval",
+      "model": "sonnet",
+      "attempts": 1,
+      "startedAt": "2026-10-08T14:55:32+00:00",
+      "approval": {
+        "tool": "Bash",
+        "detail": "npm run db:migrate -- --env test"
+      },
+      "brief": "stories/S8.md",
+      "branch": "story/S8",
+      "agent": {
+        "backend": "paseo",
+        "id": "a41e56"
+      }
+    },
+    {
+      "id": "S9",
+      "title": "Invite expiry job",
+      "summary": "nightly job expires invites older than 7 days",
+      "deps": [
+        "S1"
+      ],
+      "files": [
+        "src/jobs/expire-invites.ts"
+      ],
+      "status": "failed",
+      "model": "sonnet",
+      "attempts": 2,
+      "startedAt": "2026-10-08T14:04:32+00:00",
+      "finishedAt": "2026-10-08T15:02:32+00:00",
+      "failure": "Contract `npm test` red after 2 attempts: expire-invites.spec.ts expects UTC midnight, job uses server local time.",
+      "brief": "stories/S9.md",
+      "branch": "story/S9",
+      "agent": {
+        "backend": "paseo",
+        "id": "cd076c"
+      }
+    },
+    {
+      "id": "S11",
+      "title": "Invite rate limiting",
+      "summary": "max 20 invites per team per hour",
+      "deps": [
+        "S3"
+      ],
+      "files": [
+        "src/invites/rate-limit.ts"
+      ],
+      "status": "todo",
+      "model": "sonnet",
+      "attempts": 0,
+      "brief": "stories/S11.md",
+      "branch": "story/S11"
+    },
+    {
+      "id": "S6",
+      "title": "Accept-invite page",
+      "summary": "token landing page, sign-in or sign-up, join team",
+      "deps": [
+        "S4"
+      ],
+      "files": [
+        "web/routes/invite/[token].tsx",
+        "src/invites/service.ts"
+      ],
+      "status": "todo",
+      "model": "sonnet",
+      "attempts": 0,
+      "brief": "stories/S6.md",
+      "branch": "story/S6"
+    },
+    {
+      "id": "S7",
+      "title": "Pending invites admin list",
+      "summary": "list, resend and revoke pending invites",
+      "deps": [
+        "S4",
+        "S5"
+      ],
+      "overlapAfter": [
+        "S6"
+      ],
+      "files": [
+        "web/routes/team/invites.tsx",
+        "src/invites/service.ts"
+      ],
+      "status": "todo",
+      "model": "sonnet",
+      "attempts": 0,
+      "brief": "stories/S7.md",
+      "branch": "story/S7"
+    },
+    {
+      "id": "S10",
+      "title": "Expiry reminder email",
+      "summary": "remind 24 h before an invite expires",
+      "deps": [
+        "S9",
+        "S2"
+      ],
+      "files": [
+        "src/jobs/remind-invites.ts"
+      ],
+      "status": "blocked",
+      "model": "sonnet",
+      "attempts": 0,
+      "brief": "stories/S10.md",
+      "branch": "story/S10"
+    }
+  ],
+  "quality": {
+    "contract": [
+      {
+        "cmd": "npm run typecheck",
+        "ok": true,
+        "at": "2026-10-08T15:05:32+00:00"
+      },
+      {
+        "cmd": "npm run lint",
+        "ok": true,
+        "at": "2026-10-08T15:05:32+00:00"
+      },
+      {
+        "cmd": "npm test",
+        "ok": false,
+        "at": "2026-10-08T15:02:32+00:00"
+      }
+    ],
+    "gate": null,
+    "criteria": [
+      {
+        "text": "An admin can invite by email and the invitee receives it within a minute",
+        "pass": null
+      },
+      {
+        "text": "A revoked or expired token shows a clear error and cannot join",
+        "pass": null
+      },
+      {
+        "text": "Members cannot invite; the API returns 403",
+        "pass": null
+      }
+    ]
+  },
+  "updatedAt": "2026-10-08T15:14:32+00:00"
+}

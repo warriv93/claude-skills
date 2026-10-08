@@ -4,7 +4,7 @@
 
 For each open milestone, in order:
 
-1. **Hand off:** mark the milestone `in progress` in the ledger, then ask the user to `/clear` and run `/deep-plan M<n>: <milestone frame>`. `/deep-plan` reads the project ledger's Platform and contract blocks during recon.
+1. **Hand off:** mark the milestone `in progress` in the ledger, then ask the user to `/clear` and run `/deep-plan M<n>: <milestone frame>`. `/deep-plan` reads the project ledger's Platform and contract blocks during recon. A milestone with three or more independent stories can run through `/orchestrate-plan <frame>` instead, which drives `/deep-plan` itself.
 2. **Resume** when the user re-invokes `/deep-app-plan` after the `/deep-plan` debrief.
 3. **Deploy** the milestone to prod and confirm it live.
 4. **Record:** tick the milestone in the ledger; add lessons learned to `CLAUDE.md`.

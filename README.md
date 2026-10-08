@@ -23,6 +23,8 @@ cd claude-skills
 
 `install.sh` symlinks every `skills/<name>/` folder to `~/.claude/skills/<name>` (idempotent). Edits in the repo are live immediately.
 
+`./install.sh --global` also links [`global/CLAUDE.md`](global/CLAUDE.md), my personal instructions, to `~/.claude/CLAUDE.md`, backing up any existing file to `CLAUDE.md.bak`. Leave the flag off to install only the skills.
+
 **Antigravity / Gemini:** if `~/.gemini/config/` exists, `install.sh` also links the skills into `~/.gemini/config/skills/`, together with [`claude-tool-map`](gemini/claude-tool-map/SKILL.md), which translates the Claude Code tools, model tiers and slash commands the skills mention into their Antigravity equivalents. Each skill tells a non-Claude agent to load it first.
 
 ## Editing

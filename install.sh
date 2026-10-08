@@ -2,6 +2,8 @@
 # Symlink every skill folder in this repo into ~/.claude/skills so Claude Code
 # picks it up (and exposes it as /<name>). If Antigravity is installed, also link
 # the skills plus the gemini/ helpers into ~/.gemini/config/skills.
+# With --global, also link global/CLAUDE.md to ~/.claude/CLAUDE.md (the repo
+# owner's personal instructions; skip it to get the skills only).
 # Re-run any time; it's idempotent.
 set -euo pipefail
 
@@ -20,6 +22,16 @@ link_all() { # <target dir> <source dir>...
 }
 
 link_all "$HOME/.claude/skills" "$repo_dir/skills"
+
+if [ "${1:-}" = "--global" ]; then
+  global_md="$HOME/.claude/CLAUDE.md"
+  if [ -e "$global_md" ] && [ ! -L "$global_md" ]; then
+    mv "$global_md" "$global_md.bak"
+    echo "backed up existing $global_md -> $global_md.bak"
+  fi
+  ln -sfn "$repo_dir/global/CLAUDE.md" "$global_md"
+  echo "linked global/CLAUDE.md -> $global_md"
+fi
 
 if [ -d "$HOME/.gemini/config" ]; then
   link_all "$HOME/.gemini/config/skills" "$repo_dir/skills" "$repo_dir/gemini"

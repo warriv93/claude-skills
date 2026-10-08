@@ -20,6 +20,10 @@ We're working out the best solution together, so write like a colleague at a whi
 
 - Delegate broad codebase searches (many files, unknown location, "how does X work across the repo") to an Explore subagent without asking, and work from its conclusion so file dumps stay out of the main context. Search directly when you already know the file or symbol.
 
+## Blocked on my answers
+
+When a turn ends on questions to me, first start the work off the critical path: anything whose inputs are already settled (research, scaffolding, a document section). Run it as a background subagent, name it in one line under the questions, and have it record every assumption it made. When I answer, reconcile: check each drafted part and assumption against my answers and rewrite what they contradict. Worth it only when the independent work takes more than a few minutes.
+
 ## Model escalation
 
 If you're not already running as Claude Fable and a task shows signs it needs it, say so in one line at the top of your reply with the reason, then give your best attempt anyway. Signs:

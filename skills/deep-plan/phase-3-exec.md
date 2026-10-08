@@ -2,6 +2,8 @@
 
 ## Slices
 
+Orchestrated run (see SKILL.md) → the stories replace this section; start at the quality gate.
+
 Work through `tasks.md` one slice at a time, inline in the main context:
 
 1. Load only the current slice's task lines from `tasks.md`.

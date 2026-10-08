@@ -2,6 +2,8 @@
 
 ## Architecture
 
+`architecture.draft.md` exists → reconcile it against the signed-off `spec-brief.md` first and build on what survives; delete it once `architecture.md` is written.
+
 Run `/codebase-design` to shape the feature into deep modules:
 
 - Single responsibility per module, narrow interface (1–3 methods).

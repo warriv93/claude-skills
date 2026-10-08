@@ -17,7 +17,10 @@ The **ledger** is `.deep-plan/state.md`: current phase, pinned contract commands
 | File | Written in |
 | --- | --- |
 | `recon-note.md` | Phase R |
+| `spec.html`, `questions.json` | Phase 0 (the live spec page and its rounds) |
 | `spec-brief.md` | Phase 0 (amended by 0.5) |
+| `mock/` | Phase 0.5 |
+| `architecture.draft.md` | Phase 0, background (optional) |
 | `architecture.md` | Phase 1 |
 | `contract.log` | every contract run (overwritten) |
 | `findings-phase-3.md`, `findings-phase-4.md` | the gate of that phase |
@@ -26,10 +29,19 @@ Start every turn by reading the ledger and resuming from it; create it if missin
 
 **Checkpoint** = every artifact of the phase is on disk and the ledger names the next phase, so a fresh context can resume from disk alone. End each phase on a checkpoint.
 
+## Orchestrated runs
+
+`.deep-plan/epic.json` exists → `/orchestrate-plan` owns this run:
+
+- At every checkpoint, set `epic.json` `phase`, add each new planning file to `artifacts`, and append a `phase` line to `.deep-plan/events.jsonl`.
+- While a sign-off gate waits on the user, set `needsYou: {reason}`; clear it to `null` on sign-off.
+- Wherever a phase asks the user to re-invoke `/deep-plan`, name `/orchestrate-plan` instead.
+- After Phase 2's checkpoint, return to `/orchestrate-plan`. It builds the slices as stories and re-enters Phase 3 at its quality gate.
+
 ## Shared rules
 
 - **Contract runs:** `<cmd> > .deep-plan/contract.log 2>&1`; on failure read only `tail -n 40 .deep-plan/contract.log`.
-- **Subagent routing:** *cheap subagent* (`haiku`) for recon search, security pass, screenshot comparison; *strong subagent* (`opus`) for code-review gates and `/diagnosing-bugs`. Architecture runs in the main context.
+- **Subagent routing:** *cheap subagent* (`haiku`) for recon search, security pass, screenshot comparison; *strong subagent* (`opus`) for code-review gates and `/diagnosing-bugs`. Architecture is decided in the main context; a background draft is input to it.
 - **Subagent protocol:** static rules at the top of the prompt, diff at the bottom (prompt-cache prefix); demand `NO_PREAMBLE` — the reply is the raw findings table only. Subagents run `git diff --stat` before pulling full diffs.
 - **Commits:** one commit per green slice, conventional message. Pushing and opening the PR happen only on the user's explicit request.
 

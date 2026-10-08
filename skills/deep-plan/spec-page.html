@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec Questions</title>
+<style>
+:root {
+  --bg: #f5f5f7; --card: #ffffff; --glass: rgba(255,255,255,.72);
+  --text: #1d1d1f; --text-2: #6e6e73; --text-3: #a1a1a6;
+  --line: rgba(0,0,0,.08); --line-2: rgba(0,0,0,.14);
+  --accent: #0071e3; --accent-soft: rgba(0,113,227,.10);
+  --green: #28a745; --green-dot: #34c759; --green-soft: rgba(52,199,89,.12);
+  --gray-soft: rgba(142,142,147,.14);
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.06);
+  --radius: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000; --card: #1c1c1e; --glass: rgba(28,28,30,.72);
+    --text: #f5f5f7; --text-2: #a1a1a6; --text-3: #6e6e73;
+    --line: rgba(255,255,255,.09); --line-2: rgba(255,255,255,.16);
+    --accent: #2997ff; --accent-soft: rgba(41,151,255,.16);
+    --green: #30d158; --green-dot: #30d158; --green-soft: rgba(48,209,88,.16);
+    --gray-soft: rgba(142,142,147,.20);
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; background: var(--gray-soft); border-radius: 5px; padding: 1px 5px; }
+
+.topbar { position: sticky; top: 0; z-index: 10; background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line); }
+.topbar-inner { max-width: 1180px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+.brand { flex: 1; min-width: 0; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+h1 { margin: 0; font-size: 21px; font-weight: 680; letter-spacing: -.02em; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+.live i { width: 7px; height: 7px; border-radius: 50%; background: var(--green-dot); }
+.live.off i { background: #ff3b30; }
+
+.page { max-width: 1180px; margin: 0 auto; padding: 24px 24px 120px; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.section-title { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); margin: 4px 2px 0; }
+
+.q { padding: 20px 22px; }
+.q-head { display: flex; gap: 10px; align-items: baseline; }
+.qid { font-size: 11.5px; font-weight: 700; color: var(--text-2); background: var(--gray-soft); border-radius: 6px; padding: 1px 7px; flex: none; }
+.q h2 { margin: 0; font-size: 18px; letter-spacing: -.015em; line-height: 1.3; }
+.q .body { color: var(--text-2); margin: 8px 0 0; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-top: 16px; }
+.opt { text-align: left; border: 1.5px solid var(--line); background: var(--card); border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; display: flex; flex-direction: column; gap: 4px; }
+.opt:hover { border-color: var(--line-2); transform: translateY(-1px); }
+.opt.on { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.opt .lbl { font-weight: 620; display: flex; align-items: center; gap: 8px; }
+.opt .desc { font-size: 13.5px; color: var(--text-2); }
+.rec { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--green); background: var(--green-soft); border-radius: 6px; padding: 1px 6px; }
+.other { margin-top: 10px; width: 100%; border: 1.5px solid var(--line); background: transparent; border-radius: 12px; padding: 10px 12px; outline: none; }
+.other:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+
+.range { margin-top: 18px; }
+.range-val { font-size: 30px; font-weight: 680; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.range-val span { font-size: 15px; font-weight: 500; color: var(--text-2); margin-left: 6px; }
+.range-wrap { position: relative; padding: 10px 0 22px; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--gray-soft); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25), 0 0 0 .5px rgba(0,0,0,.08); cursor: grab; }
+input[type=range]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 1px 4px rgba(0,0,0,.25); cursor: grab; }
+.tick { position: absolute; bottom: 0; transform: translateX(-50%); font-size: 11px; color: var(--green); font-weight: 600; white-space: nowrap; }
+.tick::before { content: ""; position: absolute; left: 50%; top: -12px; width: 2px; height: 8px; background: var(--green-dot); border-radius: 1px; }
+.ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); }
+
+.side { position: sticky; top: 88px; max-height: calc(100vh - 108px); overflow-y: auto; }
+.side .card { padding: 16px 18px; }
+.decided { list-style: none; margin: 0; padding: 0; }
+.decided li { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.decided li:first-child { border-top: 0; padding-top: 0; }
+.decided .t { font-weight: 600; }
+.decided .a { grid-column: 2; color: var(--text-2); }
+.ui-q { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.ui-q li { padding: 6px 0 6px 18px; position: relative; color: var(--text-2); }
+.ui-q li::before { content: "◐"; position: absolute; left: 0; color: var(--accent); font-size: 12px; top: 8px; }
+.md { font-size: 14px; }
+.md h1, .md h2, .md h3 { font-size: 15px; margin: 14px 0 6px; }
+.md h1:first-child, .md h2:first-child { margin-top: 0; }
+.md p { margin: 6px 0; } .md ul, .md ol { margin: 6px 0; padding-left: 20px; }
+.muted { color: var(--text-3); font-size: 14px; }
+
+.dock { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 20; display: flex; gap: 10px; align-items: center; padding: 8px 8px 8px 18px; border-radius: 999px; background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,.15); max-width: calc(100vw - 32px); }
+.dock .count { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+.btn { border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 600; font-size: 14px; cursor: pointer; background: var(--accent); color: #fff; white-space: nowrap; }
+.btn.ghost { background: var(--gray-soft); color: var(--text); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+@media (max-width: 900px) {
+  .page { grid-template-columns: minmax(0, 1fr); }
+  .side { position: static; max-height: none; }
+}
+@media (max-width: 600px) {
+  .topbar-inner, .page { padding-left: 16px; padding-right: 16px; }
+  .dock .count { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <div class="brand"><div class="eyebrow" id="eyebrow">Spec</div><h1 id="title">Loading…</h1></div>
+  <span class="live" id="live"><i></i><span>Live</span></span>
+</div></header>
+
+<div class="page">
+  <main class="col" id="questions"></main>
+  <aside class="col side">
+    <div class="section-title">Decided</div>
+    <div class="card"><ul class="decided" id="decided"></ul></div>
+    <div id="ui-wrap" hidden>
+      <div class="section-title">Answered in the mock</div>
+      <div class="card"><ul class="ui-q" id="ui-q"></ul></div>
+    </div>
+    <div class="section-title">Spec brief</div>
+    <div class="card"><div class="md" id="brief"><span class="muted">Written when the grill ends</span></div></div>
+  </aside>
+</div>
+
+<div class="dock">
+  <span class="count" id="count"></span>
+  <button class="btn ghost" id="accept">Accept recommendations</button>
+  <button class="btn" id="copy">Copy answers</button>
+</div>
+
+<script>
+const S = { data: null, raw: "", brief: "", picks: {} };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const key = () => `spec-picks:${S.data?.feature}:${S.data?.round}`;
+const load = () => { try { S.picks = JSON.parse(localStorage.getItem(key()) || "{}"); } catch { S.picks = {}; } };
+const save = () => { try { localStorage.setItem(key(), JSON.stringify(S.picks)); } catch { /* private mode */ } };
+
+async function get(path) { const r = await fetch(path, { cache: "no-store" }); if (!r.ok) throw new Error(r.status); return r.text(); }
+async function poll() {
+  try {
+    const raw = await get("questions.json");
+    if (raw !== S.raw) { S.raw = raw; S.data = JSON.parse(raw); load(); render(); }
+    $("live").classList.remove("off"); $("live").lastElementChild.textContent = "Live";
+  } catch { $("live").classList.add("off"); $("live").lastElementChild.textContent = "Disconnected"; }
+  try { const b = await get("spec-brief.md"); if (b !== S.brief) { S.brief = b; $("brief").innerHTML = md(b); } } catch { /* not yet */ }
+}
+
+function render() {
+  const d = S.data;
+  document.title = `${d.feature} · Spec`;
+  $("title").textContent = d.feature;
+  $("eyebrow").textContent = `Spec · Round ${d.round}`;
+  $("questions").innerHTML = `<div class="section-title">Open questions</div>` + ((d.questions || []).map(question).join("") || `<div class="card q muted">No open questions. The spec brief is next.</div>`);
+  $("decided").innerHTML = (d.decided || []).map((x) => `<li><span class="qid">${esc(x.id)}</span><span class="t">${esc(x.title)}</span><span class="a">${esc(x.answer)}</span></li>`).join("") || `<li class="muted">Nothing yet</li>`;
+  $("ui-wrap").hidden = !(d.uiQuestions || []).length;
+  $("ui-q").innerHTML = (d.uiQuestions || []).map((x) => `<li>${esc(x)}</li>`).join("");
+  (d.questions || []).filter((q) => q.range).forEach(syncRange);
+  count();
+}
+
+function question(q) {
+  const pick = S.picks[q.id];
+  let input = "";
+  if (q.range) {
+    const r = q.range, v = pick?.value ?? r.recommended ?? r.min;
+    const pct = r.recommended != null ? ((r.recommended - r.min) / (r.max - r.min)) * 100 : null;
+    input = `<div class="range">
+      <div class="range-val" id="val-${esc(q.id)}">${esc(v)}<span>${esc(r.unit || "")}</span></div>
+      <div class="range-wrap"><input type="range" data-q="${esc(q.id)}" min="${r.min}" max="${r.max}" step="${r.step || 1}" value="${v}">
+      ${pct != null ? `<span class="tick" style="left:${pct}%">Recommended · ${esc(r.recommended)}</span>` : ""}</div>
+      <div class="ends"><span>${esc(r.min)}</span><span>${esc(r.max)} ${esc(r.unit || "")}</span></div></div>`;
+  } else {
+    input = `<div class="opts">${(q.options || []).map((o) => `<button class="opt ${pick?.option === o.id ? "on" : ""}" data-q="${esc(q.id)}" data-o="${esc(o.id)}">
+      <span class="lbl">${esc(o.label)}${o.recommended ? `<span class="rec">Recommended</span>` : ""}</span>${o.description ? `<span class="desc">${esc(o.description)}</span>` : ""}</button>`).join("")}</div>`;
+  }
+  return `<article class="card q"><div class="q-head"><span class="qid">${esc(q.id)}</span><h2>${esc(q.title)}</h2></div>
+    ${q.body ? `<p class="body">${esc(q.body)}</p>` : ""}${input}
+    <input class="other" data-other="${esc(q.id)}" placeholder="Other, or a note…" value="${esc(pick?.note || "")}"></article>`;
+}
+
+function syncRange(q) {
+  const el = document.querySelector(`input[type=range][data-q="${CSS.escape(q.id)}"]`);
+  if (!el) return;
+  const pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+  el.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--gray-soft) ${pct}%)`;
+}
+
+function answerText(q) {
+  const p = S.picks[q.id] || {};
+  let a = "";
+  if (q.range && p.value != null) a = `${p.value} ${q.range.unit || ""}`.trim();
+  if (p.option) { const o = (q.options || []).find((x) => x.id === p.option); a = `${p.option}) ${o?.label || ""}`; }
+  if (p.note) a = a ? `${a} — ${p.note}` : p.note;
+  return a;
+}
+function count() {
+  const qs = S.data?.questions || [];
+  const n = qs.filter((q) => answerText(q)).length;
+  $("count").textContent = `${n} of ${qs.length} answered`;
+  $("copy").disabled = !n;
+}
+
+document.addEventListener("click", (e) => {
+  const o = e.target.closest(".opt");
+  if (!o) return;
+  const q = o.dataset.q;
+  S.picks[q] = { ...S.picks[q], option: S.picks[q]?.option === o.dataset.o ? undefined : o.dataset.o };
+  save();
+  o.parentElement.querySelectorAll(".opt").forEach((b) => b.classList.toggle("on", S.picks[q].option === b.dataset.o));
+  count();
+});
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.matches("input[type=range]")) {
+    const q = S.data.questions.find((x) => x.id === t.dataset.q);
+    S.picks[q.id] = { ...S.picks[q.id], value: Number(t.value) };
+    $(`val-${q.id}`).innerHTML = `${esc(t.value)}<span>${esc(q.range.unit || "")}</span>`;
+    syncRange(q);
+  } else if (t.matches("[data-other]")) {
+    S.picks[t.dataset.other] = { ...S.picks[t.dataset.other], note: t.value };
+  } else return;
+  save(); count();
+});
+$("accept").addEventListener("click", () => {
+  for (const q of S.data?.questions || []) {
+    const p = S.picks[q.id] || {};
+    if (q.range && p.value == null && q.range.recommended != null) p.value = q.range.recommended;
+    if (!q.range && !p.option) { const r = (q.options || []).find((o) => o.recommended); if (r) p.option = r.id; }
+    S.picks[q.id] = p;
+  }
+  save(); render();
+});
+$("copy").addEventListener("click", async () => {
+  const text = (S.data?.questions || []).map((q) => { const a = answerText(q); return a ? `${q.id}: ${a}` : null; }).filter(Boolean).join("\n");
+  try { await navigator.clipboard.writeText(text); $("copy").textContent = "Copied — paste in the terminal"; }
+  catch { prompt("Copy these answers", text); }
+  setTimeout(() => ($("copy").textContent = "Copy answers"), 2400);
+});
+
+function md(src) {
+  const inline = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  const out = []; let list = null;
+  const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  for (const line of src.split("\n")) {
+    let m;
+    if ((m = line.match(/^(#{1,3})\s+(.*)/))) { close(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); }
+    else if ((m = line.match(/^\s*[-*]\s+(.*)/))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inline(m[1])}</li>`); }
+    else if ((m = line.match(/^\s*\d+\.\s+(.*)/))) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push(`<li>${inline(m[1])}</li>`); }
+    else if (!line.trim()) close();
+    else { close(); out.push(`<p>${inline(line)}</p>`); }
+  }
+  close(); return out.join("");
+}
+
+poll();
+setInterval(poll, 2000);
+</script>
+</body>
+</html>

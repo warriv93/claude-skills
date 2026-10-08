@@ -1,0 +1,40 @@
+{
+  "feature": "Team invites",
+  "round": 2,
+  "questions": [
+    {
+      "id": "Q4",
+      "title": "Who can send invites?",
+      "body": "Owners always can. The question is whether admins and members can too. Members inviting grows teams faster but makes seat costs harder to control.",
+      "options": [
+        { "id": "a", "label": "Owners and admins", "description": "Members ask an admin.", "recommended": true },
+        { "id": "b", "label": "Everyone", "description": "Any member can invite; owners can revoke." },
+        { "id": "c", "label": "Owners only", "description": "Tightest control, slowest growth." }
+      ]
+    },
+    {
+      "id": "Q5",
+      "title": "How long is an invite link valid?",
+      "body": "After this the link shows an expired page and the inviter can resend.",
+      "range": { "min": 1, "max": 30, "step": 1, "unit": "days", "recommended": 7 }
+    },
+    {
+      "id": "Q6",
+      "title": "What happens when the invitee already has an account?",
+      "body": "",
+      "options": [
+        { "id": "a", "label": "Join after sign-in", "description": "Link goes to sign-in, then straight into the team.", "recommended": true },
+        { "id": "b", "label": "Confirm first", "description": "Show a 'Join Acme?' screen before joining." }
+      ]
+    }
+  ],
+  "decided": [
+    { "id": "Q1", "title": "Invite by", "answer": "Email only for v1; links and SSO later" },
+    { "id": "Q2", "title": "Roles", "answer": "Owner, admin, member" },
+    { "id": "Q3", "title": "Seat limit", "answer": "Enforced at accept, not at invite" }
+  ],
+  "uiQuestions": [
+    "Where the invite button lives: team header or settings page",
+    "Pending invites as a table or as cards"
+  ]
+}

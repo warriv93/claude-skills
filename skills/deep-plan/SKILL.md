@@ -30,9 +30,9 @@ Start every turn by reading the ledger and resuming from it; create it if missin
 
 ## Orchestrated runs
 
-`.deep-plan/epic.json` exists → `/orchestrate-plan` owns this run:
+`.deep-plan/podium.json` exists → `/orchestrate-plan` owns this run:
 
-- At every checkpoint, set the active milestone's `phase` in `epic.json`, add each new planning file to its `artifacts`, and append a `phase` line (with `milestone`) to `.deep-plan/events.jsonl`.
+- At every checkpoint, set the active milestone's `phase` in `podium.json`, add each new planning file to its `artifacts`, and append a `phase` line (with `milestone`) to `.deep-plan/events.jsonl`.
 - While a sign-off gate waits on the user, set `needsYou: {reason}`; clear it to `null` on sign-off.
 - Wherever a phase asks the user to re-invoke `/deep-plan`, name `/orchestrate-plan` instead.
 - After Phase 2's checkpoint, return to `/orchestrate-plan`. It builds the slices as stories and re-enters Phase 3 at its quality gate.

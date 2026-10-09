@@ -22,6 +22,27 @@ STORY_ID = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 ACTIONS = {"assign", "plan", "build-all", "stop"}  # assign and plan take an id
 
 
+def load_run(root):
+    """The run's milestones (across every epic) and the active milestone, from podium.json or an older epic.json."""
+    for name in ("podium.json", "epic.json"):
+        try:
+            with open(os.path.join(root, name)) as f:
+                data = json.load(f)
+            break
+        except (OSError, ValueError):
+            data = None
+    if not data:
+        return [], None
+    if "epics" in data:
+        milestones = [m for e in data["epics"] for m in e.get("milestones", [])]
+        active_id = (data.get("active") or {}).get("milestone")
+    else:
+        milestones = data.get("milestones") or [{"id": data.get("epic", {}).get("id"), "stories": data.get("stories", [])}]
+        active_id = data.get("active") or milestones[0].get("id")
+    active = next((m for m in milestones if m.get("id") == active_id), None)
+    return milestones, active
+
+
 PAGE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "podium.html")
 
 
@@ -68,16 +89,10 @@ def make_handler(root):
 
         def known_ids(self, action):
             """plan → milestone ids; assign → story ids of the active milestone."""
-            try:
-                with open(os.path.join(root, "epic.json")) as f:
-                    epic = json.load(f)
-            except (OSError, ValueError):
-                return set()
-            milestones = epic.get("milestones") or [{"id": epic.get("epic", {}).get("id"), "stories": epic.get("stories", [])}]
+            milestones, active = load_run(root)
             if action == "plan":
                 return {m.get("id") for m in milestones}
-            active = next((m for m in milestones if m.get("id") == epic.get("active")), milestones[0])
-            return {s.get("id") for s in active.get("stories", [])}
+            return {s.get("id") for s in (active or {}).get("stories", [])}
 
         def reply(self, code, body):
             data = json.dumps(body).encode()

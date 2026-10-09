@@ -18,6 +18,8 @@ import os
 import subprocess
 import time
 
+from server import load_run  # one reader for podium.json, shared with the server
+
 
 def emit(line):
     print(line, flush=True)
@@ -71,13 +73,7 @@ def main():
 
         if args.paseo and time.time() - last_paseo > 10:
             last_paseo = time.time()
-            try:
-                with open(os.path.join(root, "epic.json")) as f:
-                    epic = json.load(f)
-                active = next((m for m in epic.get("milestones", []) if m.get("id") == epic.get("active")), None)
-                stories = active.get("stories", []) if active else epic.get("stories", [])
-            except (OSError, ValueError):
-                stories = []
+            stories = (load_run(root)[1] or {}).get("stories", [])
             by_agent = {s["agent"]["id"]: s for s in stories if s.get("agent", {}).get("backend") == "paseo"}
             now_waiting = {}
             for p in paseo_json(args.paseo, "permit", "ls"):

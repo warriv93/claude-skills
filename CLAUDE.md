@@ -14,7 +14,7 @@ Done when every changed line has passed its pruning checks (single source of tru
 - A skill is a folder: `skills/<name>/SKILL.md` (frontmatter with `name`, `description`, `argument-hint`) plus sibling `phase-*.md` files reached through relative links. `install.sh` symlinks each folder into `~/.claude/skills/`.
 - `SKILL.md` holds what every run needs; material only one phase needs goes in that phase's file.
 - Shared rules live once in `SKILL.md` under a leading word (_ledger_, _checkpoint_, _contract_, _subagent protocol_); phase files use the word and leave the definition where it is.
-- `/deep-plan`, `/deep-app-plan` and `/orchestrate-plan` share `.deep-plan/`: `project.md` belongs to `/deep-app-plan`; `epic.json`, `events.jsonl`, `requests.jsonl` and `stories/` to `/orchestrate-plan`; every other file to `/deep-plan`.
+- `/deep-plan`, `/deep-app-plan` and `/orchestrate-plan` share `.deep-plan/`: `project.md` belongs to `/deep-app-plan`; `podium.json`, `events.jsonl`, `requests.jsonl` and `stories/` to `/orchestrate-plan`; every other file to `/deep-plan`.
 - The agent can't run slash commands like `/clear` or `/compact`; a context reset is a request to the user.
 - Skills also run in Antigravity. Keep writing them in Claude Code terms; when a skill starts using a new tool, model or command, add its row to `gemini/claude-tool-map/SKILL.md`, the one place the translation lives.
 - After a skill change, update the skill table and Dependencies section in `README.md`.

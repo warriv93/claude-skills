@@ -1,10 +1,10 @@
 ---
-name: orchestrate-plan
-description: Plan a feature or product as epics with /deep-plan, break each milestone into stories, and build them in parallel, one agent per story, driven from the Podium, a live localhost dashboard; adopts a project already planned with /deep-plan. Use for "/orchestrate-plan", "orchestrate this feature", a feature with several independent stories, or a half-done /deep-plan project.
+name: orchestrate-deep-plans
+description: Plan a feature or product as epics with /deep-plan, break each milestone into stories, and build them in parallel, one agent per story, driven from the Podium, a live localhost dashboard; adopts a project already planned with /deep-plan. Use for "/orchestrate-deep-plans", "orchestrate this feature", a feature with several independent stories, or a half-done /deep-plan project.
 argument-hint: <feature description, or a milestone id, or nothing to adopt>
 ---
 
-# /orchestrate-plan
+# /orchestrate-deep-plans
 
 A **project** holds **epics**. An epic is a product brief, or a theme that groups related runs. Its **milestones** are the `/deep-plan` runs that deliver it, and a milestone's **stories** are the user-story slices of its `tasks.md`. This skill plans the active milestone through deep-plan, breaks it into stories, dispatches one agent per story into its own worktree, merges each back, and hands the milestone to deep-plan's quality gate. The **Podium**, a live localhost dashboard, shows all of it and is where the user plans milestones and assigns stories.
 
@@ -22,12 +22,14 @@ deep-plan's ledger and files stay deep-plan's. This skill adds:
 | `events.jsonl` | the orchestrator, append-only |
 | `requests.jsonl` | the Podium server, append-only |
 | `human.json` | the Podium server, from its availability toggle |
+| `handoffs.json` | the Podium server, from its copy button |
+| `watcher.json` | the watcher, its heartbeat; the Podium refuses requests without it |
 | `stories/<milestone>/<id>.md` — the story's **brief** | the orchestrator, at breakdown |
 | `stories/<milestone>/<id>.progress` | that story's agent, append-only |
 
 **Single writer:** every file has exactly one writer, so parallel agents never race.
 
-**`podium.py`** (`python3 <this skill>/podium/podium.py`; run it bare for its commands) is the orchestrator's only way into `podium.json` and `events.jsonl`: `status` and `get` to read, `set` to change, `commits`, `merge` and `backfill` for git. It writes atomically and keeps the file, which grows to hundreds of kilobytes, out of context. Give every change a person would want to see an `--event`.
+**`podium.py`** (`python3 <this skill>/podium/podium.py`; run it bare for its commands) is the orchestrator's only way into `podium.json` and `events.jsonl`: `status` and `get` to read, `set` to change, `commits`, `merge` and `backfill` for git, `prs` for pull-request state. It writes atomically and keeps the file, which grows to hundreds of kilobytes, out of context. Give every change a person would want to see an `--event`.
 
 [`podium/sample/`](podium/sample/) is the reference run: copy the shapes of `podium.json`, `events.jsonl` and `stories/*` from it. Field values:
 
@@ -38,6 +40,7 @@ deep-plan's ledger and files stay deep-plan's. This skill adds:
 - `stories[].status`: `todo` `working` `approval` `done` `failed` `blocked` `dropped`. The Podium derives ready / waiting from `deps`.
 - `deps`: ids it is blocked by (milestones among milestones, stories within a milestone). `stories[].overlapAfter`: ids it shares files with, which must merge first.
 - `needsYou`: `{reason, story?}` while the run waits on the user, otherwise `null`.
+- `milestones[].pr`: `{number, url, state}` once its PR is open; `state` is `draft` `open` `merged` `closed`.
 - Progress lines: `<ISO time> <STAGE> <note>`, STAGE one of `STARTED` `RED` `GREEN` `REFACTOR` `CONTRACT` `COMMITTED` `FAILED`.
 
 ## Podium
@@ -52,8 +55,9 @@ The user is **available** or **unavailable**; `podium.py human` says which and u
 
 - **Available:** ask as each phase says.
 - **Unavailable:** keep the run moving on your own judgement. Every question a phase or deep-plan would put to the user, sign-off gates and the grill included, becomes an **assumption**: take the option you'd recommend, record it with `podium.py assume "<question>" "<choice>" "<why>" [--story <id>]`, and carry on. Skip a context reset deep-plan would ask for.
-- **Waits for the user either way:** anything that leaves the machine or can't be undone (push, PR, landing, deleting). Set `needsYou` for it and go on with the work that doesn't depend on it; when none is left, wait for `HUMAN available`.
-- **`HUMAN available`:** put the open assumptions (`podium.py assumptions`) to the user in `AskUserQuestion` rounds, your choice as the recommended option. Settle each with `set . assumptions.<n>.status=<confirmed|reversed> --event settled question=… status=…`. A reversal is rework: amend the planning file it touched, and send a story it shaped back to `todo` with the answer in its brief.
+- **Landing while unavailable:** once the milestone passes verify, open its PR through `/create-pr` without `--ready`. A draft PR is the one push the run makes on its own; the Podium lists every draft PR under Needs you.
+- **Waits for the user either way:** everything else that leaves the machine or can't be undone: merging, marking a PR ready, deleting. Set `needsYou` for it and go on with the work that doesn't depend on it; when none is left, wait for `HUMAN available`.
+- **`HUMAN available`:** run `podium.py prs`, link the draft PRs, and put the open assumptions (`podium.py assumptions`) to the user in `AskUserQuestion` rounds, your choice as the recommended option. Settle each with `set . assumptions.<n>.status=<confirmed|reversed> --event settled question=… status=…`. A reversal is rework: amend the planning file it touched, and send a story it shaped back to `todo` with the answer in its brief.
 
 ## Dispatcher
 

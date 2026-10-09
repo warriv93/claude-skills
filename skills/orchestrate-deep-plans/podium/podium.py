@@ -27,7 +27,8 @@ COMMANDS
         directly or through others. --event appends one events.jsonl line
         with `at`, `milestone` and `story` filled in from the target.
     ready
-        The active milestone's ready story ids, space-separated.
+        The active milestone's ready story ids, space-separated. A story the
+        user handed off to a session of their own (handoffs.json) is never ready.
     commits <git log args> [--into <target>] [--no-stats]
         Each non-merge commit the args select (a range, or --no-walk <sha>...),
         oldest first, as {sha, subject, plus, minus, at}. --into writes them
@@ -54,6 +55,11 @@ COMMANDS
     assumptions
         The open assumptions, numbered by their index in the list
         (settle one with `set . assumptions.<n>.status=confirmed|reversed`).
+    prs [<milestone>]
+        Refresh the state of the milestone's `pr` (every milestone's when none
+        is named) with `gh pr view`. Merged PRs are final and skipped. One line
+        per PR: `<milestone> #<n> <state> [(was <old>)]`, or `error: <message>`.
+        A changed state is written back with a `pr` event. Exits 1 on any error.
     backfill
         Rebuild the planned, commit and landed lines of events.jsonl from the
         milestones' commits, brief dates and landedSha, keep every other line,
@@ -139,10 +145,20 @@ class Podium:
         m, s = self.story(sid, mid or None)
         return s, m["id"], s["id"]
 
+    def handed_off(self, m):
+        """Ids of m's stories the user took to a session of their own (handoffs.json, the Podium's copy button)."""
+        try:
+            with open(os.path.join(self.root, "handoffs.json")) as f:
+                return {k.split("/", 1)[1] for k in json.load(f) if k.startswith(m["id"] + "/")}
+        except (OSError, ValueError):
+            return set()
+
     def ready(self, m):
         done = {s["id"] for s in m.get("stories", []) if s.get("status") == "done"}
+        away = self.handed_off(m)
         return [s["id"] for s in m.get("stories", [])
-                if s.get("status") == "todo" and set(s.get("deps", []) + s.get("overlapAfter", [])) <= done]
+                if s.get("status") == "todo" and s["id"] not in away
+                and set(s.get("deps", []) + s.get("overlapAfter", [])) <= done]
 
     def git(self, *args, check=True):
         r = subprocess.run(["git", *args], cwd=self.repo, capture_output=True, text=True)
@@ -277,8 +293,9 @@ def cmd_status(p, args):
         return
     m = p.milestone(mid)
     print(f"\n{m['id']} {m.get('title', '')} · {m.get('status')} · phase {m.get('phase')} · branch {m.get('branch', '-')}")
+    away = p.handed_off(m)
     for s in m.get("stories", []):
-        extra = [f"deps {','.join(s['deps'])}" if s.get("deps") else "",
+        extra = ["handed off" if s["id"] in away and s.get("status") == "todo" else "",f"deps {','.join(s['deps'])}" if s.get("deps") else "",
                  f"after {','.join(s['overlapAfter'])}" if s.get("overlapAfter") else "",
                  f"att {s['attempts']}" if s.get("attempts") else "",
                  f"failure: {s['failure']}" if s.get("failure") else ""]
@@ -424,6 +441,32 @@ def cmd_assumptions(p, _):
             print(f"{i} [{where}] {a['question']} → {a['choice']} ({a['why']})")
 
 
+def cmd_prs(p, args):
+    errors = changed = 0
+    for m in [p.milestone(args[0])] if args else p.milestones():
+        pr = m.get("pr")
+        if not pr or pr.get("state") == "merged":
+            continue
+        out = subprocess.run(["gh", "pr", "view", str(pr["number"]), "--json", "state,isDraft,url"],
+                             cwd=p.repo, capture_output=True, text=True)
+        if out.returncode:
+            errors += 1
+            print(f"{m['id']} #{pr['number']} error: {(out.stderr.strip().splitlines() or ['gh failed'])[-1]}")
+            continue
+        got = json.loads(out.stdout)
+        state = "draft" if got.get("isDraft") and got["state"] == "OPEN" else got["state"].lower()
+        old = pr.get("state")
+        pr.update(state=state, url=got.get("url") or pr.get("url"))
+        if state != old:
+            changed += 1
+            p.event("pr", m["id"], number=pr["number"], state=state, was=old, url=pr["url"])
+        print(f"{m['id']} #{pr['number']} {state}" + (f" (was {old})" if state != old else ""))
+    if changed:
+        p.save()
+    if errors:
+        sys.exit(1)
+
+
 def cmd_backfill(p, _):
     events_path = os.path.join(p.root, "events.jsonl")
     kept = []
@@ -473,7 +516,7 @@ def cmd_backfill(p, _):
 
 COMMANDS = {"status": cmd_status, "get": cmd_get, "set": cmd_set, "ready": cmd_ready,
             "commits": cmd_commits, "merge": cmd_merge, "human": cmd_human, "assume": cmd_assume,
-            "assumptions": cmd_assumptions, "backfill": cmd_backfill}
+            "assumptions": cmd_assumptions, "prs": cmd_prs, "backfill": cmd_backfill}
 
 
 def main(argv):

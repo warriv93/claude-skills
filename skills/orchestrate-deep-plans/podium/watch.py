@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""orchestrate-plan watcher, run under the Monitor tool.
+"""The Podium watcher, run by the orchestrator under the Monitor tool.
 
 Prints one line per event the orchestrator must act on:
 
@@ -10,6 +10,9 @@ Prints one line per event the orchestrator must act on:
     PERMISSION-CLEARED <story>      that approval was answered          (--paseo)
     IDLE <story>                    a working story's Paseo agent went idle (--paseo)
     HUMAN <available|unavailable>   the user's availability flipped (hours or the Podium toggle)
+
+It also rewrites watcher.json ({pid, at}) every few seconds, its heartbeat:
+the Podium server takes requests only while it is fresh.
 
     python3 watch.py [--dir .deep-plan] [--paseo /path/to/paseo]
 """
@@ -63,7 +66,14 @@ def main():
     waiting, idle = set(), set()
     last_paseo = last_human = 0.0
     mode = human()
+    last_beat = 0.0
     while True:
+        if time.time() - last_beat > 5:
+            last_beat = time.time()
+            with open(os.path.join(root, "watcher.json.tmp"), "w") as f:
+                json.dump({"pid": os.getpid(), "at": last_beat}, f)
+            os.replace(os.path.join(root, "watcher.json.tmp"), os.path.join(root, "watcher.json"))
+
         for path in watched():
             if not os.path.exists(path):
                 continue

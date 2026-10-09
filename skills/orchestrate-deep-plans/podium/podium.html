@@ -75,6 +75,7 @@ code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:
 .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); white-space: nowrap; }
 .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--green-dot); }
 .live.off i { background: var(--red); }
+.live.idle i { background: var(--amber-dot); }
 .human { display: inline-flex; align-items: center; gap: 2px; background: var(--gray-soft); border-radius: 999px; padding: 2px; font-size: 12px; white-space: nowrap; }
 .human button { border: 0; background: transparent; border-radius: 999px; padding: 4px 10px; cursor: pointer; color: var(--text-2); display: inline-flex; align-items: center; gap: 6px; }
 .human .state { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
@@ -112,6 +113,7 @@ code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:
 .banner.idle { background: var(--card); border-color: var(--line); box-shadow: var(--shadow); }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .wchip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); cursor: pointer; font-size: 13px; box-shadow: var(--shadow); }
+a.wchip { color: inherit; text-decoration: none; }
 .wchip:hover { border-color: var(--line-2); }
 .wchip b { font-weight: 600; }
 .stage { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; padding: 2px 7px; border-radius: 6px; background: var(--gray-soft); color: var(--text-2); }
@@ -187,6 +189,10 @@ code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:
 .badge.failed { background: var(--red-soft); color: var(--red); }
 .badge.blocked, .badge.waiting { color: var(--text-3); padding-left: 0; font-weight: 500; }
 .badge.ready { color: var(--accent); padding-left: 0; }
+.badge.elsewhere { background: var(--accent-soft); color: var(--accent); }
+.node.elsewhere { border-color: rgba(0,113,227,.35); }
+.release { border: 0; background: transparent; color: var(--text-3); cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 999px; margin-left: auto; }
+.release:hover { color: var(--red); background: var(--red-soft); }
 
 .btn { border: 0; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; white-space: nowrap; transition: filter .15s, opacity .15s; }
 .btn:hover { filter: brightness(1.08); }
@@ -194,6 +200,9 @@ code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:
 .btn.ghost { background: var(--gray-soft); color: var(--text); }
 .btn.big { padding: 8px 16px; font-size: 13.5px; }
 .node .foot .btn { margin-left: auto; }
+.copy { border: 0; background: var(--gray-soft); color: var(--text-2); border-radius: 999px; width: 26px; height: 26px; padding: 0; display: inline-grid; place-items: center; cursor: pointer; flex: none; vertical-align: middle; margin-left: 6px; }
+.copy:hover { color: var(--text); filter: brightness(.96); }
+.btn.big + .copy { width: 34px; height: 34px; }
 
 .node.epic { background: var(--card); padding: 16px 18px; gap: 8px; border-radius: 20px; }
 .node.epic .title { font-size: 16.5px; font-weight: 680; -webkit-line-clamp: 1; }
@@ -408,7 +417,7 @@ const UNSTARTED = ["draft", "parked", "later"];
 const POLL_MS = 2000;
 const W = 236, H = 140, EPIC_W = 380, EPIC_H = 132, GX = 22, GY = 64, PAD = 56;
 
-const S = { human: null, info: null, project: null, epicView: undefined, epic: null, raw: "", events: [], eventsRaw: "", progress: {}, briefs: {}, selected: null, view: undefined, query: "", filter: "all", online: true };
+const S = { handoffs: {}, human: null, info: null, project: null, epicView: undefined, epic: null, raw: "", events: [], eventsRaw: "", progress: {}, briefs: {}, selected: null, view: undefined, query: "", filter: "all", online: true };
 const $ = (id) => document.getElementById(id);
 /* appearance: "system" (default) follows the OS; the choice is a per-viewer convenience in localStorage */
 function setTheme(t) {
@@ -490,9 +499,13 @@ async function poll() {
       const ev = await getText("events.jsonl");
       if (ev !== S.eventsRaw) { S.eventsRaw = ev; S.events = parseJsonl(ev); renderEvents(); }
     } catch { /* no events yet */ }
+    try {
+      const h = await getText("handoffs.json");
+      if (h !== S.handoffsRaw) { S.handoffsRaw = h; S.handoffs = JSON.parse(h); changed = true; }
+    } catch { if (S.handoffsRaw) { S.handoffsRaw = ""; S.handoffs = {}; changed = true; } }
     const actx = S.project.active ? epicCtx(S.project.active.epic) : null;
     const am = actx?.milestones.find((m) => m.id === actx.active);
-    const live = (am?.stories || []).filter((s) => ["working", "approval"].includes(s.status) || (S.view === am.id && s.id === S.selected));
+    const live = (am?.stories || []).filter((s) => ["working", "approval"].includes(s.status) || S.handoffs[key(am.id, s.id)] || (S.view === am.id && s.id === S.selected));
     for (const s of live) {
       try {
         const p = await getText(progressPath(am.id, s.id));
@@ -507,8 +520,12 @@ async function poll() {
   } catch {
     S.online = false;
   }
+  try { S.watching = (await (await fetch("/info", { cache: "no-store" })).json()).watching; } catch { /* offline */ }
+  const idle = S.online && S.watching === false;
   $("live").classList.toggle("off", !S.online);
-  $("live").lastElementChild.textContent = S.online ? "Live" : "Disconnected";
+  $("live").classList.toggle("idle", idle);
+  $("live").title = idle ? `No orchestrator is watching this Podium, so its buttons can't act. Run /${S.info?.skill || "orchestrate-plan"} in an agent chat.` : "";
+  $("live").lastElementChild.textContent = !S.online ? "Disconnected" : idle ? "No orchestrator" : "Live";
 }
 function parseJsonl(text) {
   return text.split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
@@ -538,10 +555,11 @@ const byId = () => Object.fromEntries(items().map((s) => [s.id, s]));
 const phaseLabel = (p) => PHASES.find(([k]) => k === p)?.[1] || p || "";
 function viewStatus(s, map) {
   if (s.status !== "todo") return s.status;
+  if (S.handoffs[key(viewMs()?.id, s.id)]) return "elsewhere";
   return (s.deps || []).every((d) => !map[d] || ["done", "dropped"].includes(map[d].status)) ? "ready" : "waiting";
 }
 function filterKey(st) {
-  return { ready: "todo", waiting: "todo", todo: "todo", draft: "todo", parked: "todo", later: "todo", approval: "working", blocked: "failed" }[st] || st;
+  return { ready: "todo", waiting: "todo", todo: "todo", draft: "todo", parked: "todo", later: "todo", approval: "working", elsewhere: "working", blocked: "failed" }[st] || st;
 }
 function matches(s) {
   const q = S.query.trim().toLowerCase();
@@ -630,7 +648,7 @@ function renderProject() {
   if (!actx) {
     $("stepper").hidden = true;
     const landed = P.epics.reduce((n, E) => n + (E.milestones || []).filter((m) => m.status === "done").length, 0);
-    $("banner").innerHTML = assumedBanner() + `<div class="banner idle"><span class="label">Idle</span><span class="sub">${P.epics.length} epics · ${landed} milestones landed · open an epic to plan its next milestone</span></div>`;
+    $("banner").innerHTML = prBanner() + assumedBanner() + `<div class="banner idle"><span class="label">Idle</span><span class="sub">${P.epics.length} epics · ${landed} milestones landed · open an epic to plan its next milestone</span></div>`;
   }
   $("q").placeholder = "Search epics and milestones";
   $("map-title").textContent = "Epics";
@@ -702,7 +720,19 @@ function renderBanner() {
     const next = ms.filter((m) => [...UNSTARTED, "todo"].includes(m.status));
     html = `<div class="banner idle"><span class="label">Idle</span><span class="sub">${ms.filter((m) => m.status === "done").length} milestones landed · next: pick one to plan</span><div class="chips">${next.map((m) => `<span class="wchip" data-open="${esc(m.id)}" data-ms=""><b>${esc(m.id)}</b> ${esc(m.title)} <span class="cycle">· ${esc(m.status)}</span></span>`).join("")}</div></div>`;
   }
-  $("banner").innerHTML = assumedBanner() + html;
+  $("banner").innerHTML = prBanner() + assumedBanner() + html;
+}
+/* every draft PR in the project: the orchestrator opens PRs as drafts, and marking one ready is the user's call */
+function draftPrs() {
+  return S.project.epics.flatMap((E) => (E.milestones || []).flatMap((m) =>
+    [m.pr, ...Object.entries(m.repos || {}).map(([repo, r]) => r?.pr && { ...r.pr, repo })]
+      .filter((pr) => pr?.state === "draft").map((pr) => ({ ...pr, ms: m.id }))));
+}
+function prBanner() {
+  const prs = draftPrs();
+  if (!prs.length) return "";
+  const chips = prs.map((pr) => `<a class="wchip" href="${esc(pr.url)}" target="_blank" rel="noopener"><b>${esc(pr.ms)}</b>${pr.repo ? ` ${esc(pr.repo)}` : ""} #${esc(pr.number)} <span class="cycle">· draft ↗</span></a>`).join("");
+  return `<div class="banner needs"><span class="label"><span class="pulse amber"></span>Needs you · ${prs.length === 1 ? "a draft PR" : `${prs.length} draft PRs`}</span><span class="sub">Review it, then mark it ready or ask for changes</span><div class="chips">${chips}</div></div>`;
 }
 /* the topbar toggle: the user's availability, from their hours or the toggle until the next change of hours */
 function renderHuman() {
@@ -818,9 +848,9 @@ function milestoneNode(m, p, map) {
   let foot = "";
   if (st === "done") foot = `<span class="badge done">Completed</span>${m.shippedAt ? `<span class="when">${esc(m.shippedAt)}</span>` : ""}`;
   else if (st === "working") foot = `<span class="pulse"></span><span class="badge working">Working on</span><span class="when">${esc(phaseLabel(m.phase))}</span>`;
-  else if (UNSTARTED.includes(st)) foot = `<span class="badge ${st}">${{ draft: "Draft", parked: "Parked", later: "Later" }[st]}</span><button class="btn" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>`;
+  else if (UNSTARTED.includes(st)) foot = `<span class="badge ${st}">${{ draft: "Draft", parked: "Parked", later: "Later" }[st]}</span><button class="btn" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}`;
   else if (st === "dropped") foot = `<span class="badge dropped">Dropped</span>`;
-  else if (st === "ready") foot = `<span class="badge ready">Ready</span><button class="btn" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>`;
+  else if (st === "ready") foot = `<span class="badge ready">Ready</span><button class="btn" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}`;
   else foot = `<span class="badge waiting">Waiting on ${esc((m.deps || []).filter((d) => map[d]?.status !== "done").join(", "))}</span>`;
   return `<div class="node ms ${st} ${S.selected === m.id ? "sel" : ""}" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" ${stories.length ? `data-drill="${esc(m.id)}"` : `data-open="${esc(m.id)}"`} data-id="${esc(m.id)}" tabindex="0">
     <div class="top"><span class="sid">${esc(m.id)}</span><span class="model">${stories.length ? `${done}/${stories.length} slices ›` : ""}</span></div>
@@ -842,10 +872,11 @@ function storyNode(s, p, map) {
   if (st === "done") foot = `<span class="badge done">Completed</span>${s.commits?.[0] ? `<span class="when mono">${esc(s.commits[0].sha.slice(0, 7))}</span>` : ""}`;
   else if (st === "working") foot = `<span class="pulse"></span><span class="badge working">Working on</span>`;
   else if (st === "approval") foot = `<span class="pulse amber"></span><span class="badge approval">Waiting for approval</span>`;
+  else if (st === "elsewhere") foot = `<span class="badge elsewhere">In another session</span>${releaseBtn(s.id)}`;
   else if (st === "failed") foot = `<span class="badge failed">Failed · ${s.attempts || 0}/2</span>`;
   else if (st === "blocked") foot = `<span class="badge blocked">Blocked by ${esc((s.deps || []).filter((d) => map[d]?.status !== "done").join(", "))}</span>`;
   else if (st === "dropped") foot = `<span class="badge dropped">Dropped</span>`;
-  else if (st === "ready") foot = `<span class="badge ready">Ready</span>${live ? `<button class="btn" data-act="assign" data-id="${esc(s.id)}">Assign subagent</button>` : ""}`;
+  else if (st === "ready") foot = `<span class="badge ready">Ready</span>${live ? `<button class="btn" data-act="assign" data-id="${esc(s.id)}">Assign subagent</button>${copyBtn("assign", s.id)}` : ""}`;
   else {
     const wait = (s.deps || []).filter((d) => map[d]?.status !== "done");
     foot = `<span class="badge waiting">Waiting on ${esc(wait.join(", "))}</span>${live ? `<button class="btn" disabled title="Waiting on ${esc(wait.join(", "))}">Assign subagent</button>` : ""}`;
@@ -853,7 +884,7 @@ function storyNode(s, p, map) {
   return `<div class="node ${st} ${S.selected === s.id ? "sel" : ""}" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" data-open="${esc(s.id)}" data-id="${esc(s.id)}" tabindex="0">
     <div class="top"><span class="sid">${esc(s.id)}</span><span class="model">${esc(s.model || "")}</span></div>
     <span class="title">${esc(s.title)}</span>
-    ${st === "working" ? (([l, n]) => `<div class="doing">${esc(l)}${bar3(n)}</div>`)(doing(vm.id, s.id)) : ""}
+    ${st === "elsewhere" && !progressLines(vm.id, s.id).length ? `<div class="doing">Copied · not started yet</div>` : ""}${["working", "elsewhere"].includes(st) && (st === "working" || progressLines(vm.id, s.id).length) ? (([l, n]) => `<div class="doing">${esc(l)}${bar3(n)}</div>`)(doing(vm.id, s.id)) : ""}
     <div class="foot">${foot}</div></div>`;
 }
 
@@ -906,6 +937,8 @@ const EV = {
   request: ["⌘", "", (e) => `Podium: ${esc(e.text || "")}`],
   human: ["◐", "", (e) => e.mode === "available" ? "You're available — open decisions go to you" : "You're away — the orchestrator decides on its own"],
   assumed: ["◇", "blue", (e) => `${link(e)} Decided: ${esc(e.question || "")} → <b>${esc(e.choice || "")}</b>`],
+  denied: ["⊘", "amber", (e) => `${link(e)} permission denied while you're away: ${esc(e.tool || "")} — finding another way`],
+  pr: ["⇡", "blue", (e) => `${msLink(e.milestone)}PR <a href="${esc(e.url || "")}" target="_blank" rel="noopener">#${esc(e.number)}</a> ${esc(e.state || "")}${e.was ? ` <span class="meta">was ${esc(e.was)}</span>` : ""}`],
   settled: ["✓", "", (e) => `${link(e)} You ${e.status === "reversed" ? "reversed" : "confirmed"}: ${esc(e.question || "")}`],
 };
 function link(e) {
@@ -985,8 +1018,9 @@ function renderSheet() {
   const live = vm.id === e.active && vm.status === "working";
   const st = viewStatus(s, map);
   const blocks = items().filter((x) => (x.deps || []).includes(id));
-  const label = { done: "Completed", working: "Working on", approval: "Waiting for approval", failed: "Failed", blocked: "Blocked", ready: "Ready", waiting: "Waiting on dependencies", dropped: "Dropped" }[st];
-  const action = st === "ready" && live ? `<button class="btn big" data-act="assign" data-id="${esc(id)}">Assign subagent</button>` : "";
+  const label = { done: "Completed", working: "Working on", elsewhere: "In another session", approval: "Waiting for approval", failed: "Failed", blocked: "Blocked", ready: "Ready", waiting: "Waiting on dependencies", dropped: "Dropped" }[st];
+  const action = st === "ready" && live ? `<button class="btn big" data-act="assign" data-id="${esc(id)}">Assign subagent</button>${copyBtn("assign", id)}`
+    : st === "elsewhere" ? `<button class="btn big ghost" data-release="${esc(id)}">✕ Take it back</button>${copyBtn("assign", id)}` : "";
   const log = progressLines(vm.id, id);
   const elapsed = s.startedAt ? dur((s.finishedAt ? Date.parse(s.finishedAt) : Date.now()) - Date.parse(s.startedAt)) : "—";
   $("sheet-head").innerHTML = `<div class="top" style="display:flex;gap:8px;align-items:center"><span class="sid">${e.single ? "" : `${esc(vm.id)} · `}${esc(id)}</span>${st === "working" ? `<span class="pulse"></span>` : st === "approval" ? `<span class="pulse amber"></span>` : ""}<span class="badge ${st}">${label}</span></div><h2>${esc(s.title)}</h2><div class="muted">${esc(s.summary || "")}</div>${action ? `<div style="margin-top:12px">${action}</div>` : ""}`;
@@ -1010,7 +1044,7 @@ function milestoneSheet(m) {
   const blocks = S.epic.milestones.filter((x) => (x.deps || []).includes(m.id));
   const actions = [
     stories.length && S.view !== m.id && !S.epic.single ? `<button class="btn big" data-drill="${esc(m.id)}">Open slice map ›</button>` : "",
-    [...UNSTARTED, "ready"].includes(st) ? `<button class="btn big ${stories.length ? "ghost" : ""}" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>` : "",
+    [...UNSTARTED, "ready"].includes(st) ? `<button class="btn big ${stories.length ? "ghost" : ""}" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}` : "",
   ].join(" ");
   const q = m.quality?.gate;
   $("sheet-head").innerHTML = `<div class="top" style="display:flex;gap:8px;align-items:center"><span class="sid">${esc(m.id)}</span>${st === "working" ? `<span class="pulse"></span>` : ""}<span class="badge ${st}">${label}</span></div><h2>${esc(m.title)}</h2><div class="muted">${esc(m.summary || "")}</div>${actions.trim() ? `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">${actions}</div>` : ""}`;
@@ -1074,13 +1108,46 @@ function when(iso) {
 function dur(ms) { const m = Math.max(0, Math.round(ms / 60000)); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; }
 
 /* ---------- actions ---------- */
+const NO_ORCHESTRATOR = () => `No orchestrator is watching — run /${S.info?.skill || "orchestrate-plan"} in an agent chat, then click again`;
+/* the prompt behind a button, for a session of the user's own; the server builds it from the skill's text */
+const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 3.5v-.5a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
+const releaseBtn = (id) => `<button class="release" data-release="${esc(id)}" title="Take it back: the orchestrator may dispatch it again" aria-label="Take it back">✕</button>`;
+async function release(id) {
+  try {
+    const r = await fetch(`/handoff/${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!r.ok) throw new Error(r.status);
+    toast(`${id} is back with the orchestrator`);
+    poll();
+  } catch {
+    toast("Couldn't take it back — is server.py running?");
+  }
+}
+const copyBtn = (action, id) => `<button class="copy" data-copy="${action}" data-id="${esc(id)}" title="Copy the prompt to run it in another session" aria-label="Copy prompt">${COPY_ICON}</button>`;
+async function copyPrompt(action, id) {
+  try {
+    let r = action === "assign"
+      ? await fetch(`/handoff/${encodeURIComponent(id)}`, { method: "POST" })
+      : await fetch(`/prompt/${action}/${encodeURIComponent(id)}`, { cache: "no-store" });
+    const unmarked = r.status === 409;  // no orchestrator to keep it from: copy it without the hand-off
+    if (unmarked) r = await fetch(`/prompt/${action}/${encodeURIComponent(id)}`, { cache: "no-store" });
+    if (r.status === 404 && !r.headers.get("Content-Type")?.includes("json")) return toast("This server.py predates the copy button — restart it");
+    if (!r.ok) throw new Error(r.status);
+    await navigator.clipboard.writeText(await r.text());
+    if (unmarked) return toast(`Prompt for ${id} copied — no orchestrator is running, so nothing else will build it`);
+    toast(action === "assign" ? `${id} is yours — prompt copied; the orchestrator leaves it alone until you take it back` : `Prompt for ${id} copied — paste it in another session`);
+    if (action === "assign") poll();
+  } catch {
+    toast("Couldn't copy the prompt — is server.py running?");
+  }
+}
 async function act(action, id) {
   const path = ["assign", "plan", "human"].includes(action) ? `/${action}/${encodeURIComponent(id)}` : `/${action}`;
   try {
     const r = await fetch(path, { method: "POST" });
+    if (r.status === 409) return toast(NO_ORCHESTRATOR());
     if (!r.ok) throw new Error(r.status);
     if (action === "human") { S.human = await r.json(); renderHuman(); return toast({ available: "You're available — the orchestrator brings its questions to you", unavailable: "You're away — the orchestrator keeps going and records its decisions", auto: "Back on your hours" }[id]); }
-    toast({ assign: `Queued ${id} — the orchestrator picks it up next`, plan: `Planning ${id} queued — answer the grill in the terminal`, "build-all": "Build all queued — wave by wave", stop: "Stopping after this wave" }[action]);
+    toast({ assign: `Queued ${id} — the orchestrator picks it up next`, plan: `Planning ${id} — answer its questions in the orchestrator's chat`, "build-all": "Build all queued — wave by wave", stop: "Stopping after this wave" }[action]);
   } catch {
     toast("The Podium server didn't accept the request — is server.py running?");
   }
@@ -1091,6 +1158,10 @@ function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add
 document.addEventListener("click", (ev) => {
   const th = ev.target.closest("[data-theme-set]");
   if (th) { setTheme(th.dataset.themeSet); return; }
+  const rl = ev.target.closest("[data-release]");
+  if (rl) { ev.stopPropagation(); release(rl.dataset.release); return; }
+  const cp = ev.target.closest("[data-copy]");
+  if (cp) { ev.stopPropagation(); copyPrompt(cp.dataset.copy, cp.dataset.id); return; }
   const a = ev.target.closest("[data-act]");
   if (a) { ev.stopPropagation(); if (!a.disabled) act(a.dataset.act, a.dataset.id); return; }
   const f = ev.target.closest("[data-filter]");

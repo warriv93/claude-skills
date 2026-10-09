@@ -23,5 +23,6 @@ The skills in `claude-skills` are written for Claude Code. Run them as written, 
 | `/security-review`, `code-review` | activate if installed; otherwise run the review inline against the same diff |
 | `Monitor` on a watcher script | start it with `run_command` in the background; read its new output at the start of each turn |
 | `Agent` with `isolation: "worktree"`, `run_in_background` | `git worktree add -b <branch> ../<slug> <base>`, then a subagent working in that folder |
+| `TaskStop` on a background subagent | stop that subagent, or let it finish and ignore its result |
 | Paseo MCP tools (`create_workspace`, `create_agent`, …) | the same tools if Paseo's MCP server is configured; otherwise the skill's fallback |
 | `CLAUDE.md` | write to `CLAUDE.md` if the project has one, else `GEMINI.md` / `AGENTS.md` |

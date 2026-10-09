@@ -1,11 +1,29 @@
 #!/usr/bin/env python3
-"""orchestrate-plan Podium server.
+"""The Podium server of the orchestrate skill this folder sits in.
 
 Serves `podium.html` (next to this file) plus the run directory (default
 `.deep-plan/`) on 127.0.0.1, and turns the
 Podium's buttons into lines in `requests.jsonl`, which the orchestrator
 watches. The browser only ever sends an action and a story id; prompts are
 built by the orchestrator from the story brief.
+
+GET /prompt/<plan|assign>/<id> returns the prompt the orchestrator would act
+on, for the user to run in a session of their own: `/<skill> <id>`
+for a milestone; for a story, the story prompt of ../phase-3-build.md (its
+single source) filled in, after a step that sets up its worktrees.
+
+POST /handoff/<story> hands a ready story of the active milestone to such a
+session: it records the story in `handoffs.json` (this server is its only
+writer), so the orchestrator leaves it alone, and returns its prompt.
+DELETE /handoff/<story> takes it back.
+
+The buttons that need the orchestrator (assign, plan, build-all, stop, a
+hand-off) answer 409 while no watcher is running (watcher.json older than
+30 s): nothing would read the request. GET /info says `watching`.
+
+The availability toggle writes `human.json` (this server is its only writer):
+POST /human/<available|unavailable|auto>[?until=HH:MM]. GET /human returns
+podium.py's reading of the user's availability.
 
     python3 server.py [--dir .deep-plan] [--port 8765]
 """
@@ -15,6 +33,7 @@ import os
 import re
 import socket
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -47,6 +66,47 @@ def load_run(root):
 
 
 PAGE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "podium.html")
+PHASE_3 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "phase-3-build.md")
+SKILL = os.path.basename(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # the command this Podium belongs to
+
+
+def story_prompt(root, milestone, story):
+    """The story prompt of phase-3-build.md for one story, after a step that creates the worktrees the
+    orchestrator otherwise makes at dispatch: one per repo in the story's `repos`, else one beside the repo."""
+    with open(PHASE_3) as f:
+        template = re.search(r"Story prompt[^\n]*\n+```\n(.*?)\n```", f.read(), re.S).group(1)
+    sid, mid = story["id"], milestone["id"]
+    if story.get("repos"):
+        repos = milestone.get("repos") or {}
+        trees = {r: os.path.join(root, "worktrees", sid, r) for r in story["repos"]}
+        setup = [f"git -C {repos[r]['path']} worktree add -b story/{sid} {t} {repos[r]['branch']}" for r, t in trees.items()]
+    else:
+        repo = os.path.dirname(root)
+        trees = {os.path.basename(repo): f"{repo}-{sid}"}
+        setup = [f"git -C {repo} worktree add -b story/{sid} {repo}-{sid} {milestone.get('branch')}"]
+    body = (template.replace(" <repo>: <path>, one per line.", "\n" + "\n".join(f"{r}: {t}" for r, t in trees.items()))
+            .replace("<absolute run dir>", root).replace("<milestone>", mid).replace("<id>", sid))
+    return (f"You run outside the orchestrator, which tracks you only through the progress file named below: "
+            f"log STARTED before anything else and end on COMMITTED or FAILED. It merges your commit when it reads COMMITTED.\n\n"
+            f"First set up your worktree{'s' if len(trees) > 1 else ''}, then work only there:\n" + "\n".join(setup) + "\n\n" + body + "\n")
+
+
+def watching(root):
+    """Whether an orchestrator's watcher is running: its heartbeat in watcher.json is under 30 s old."""
+    try:
+        with open(os.path.join(root, "watcher.json")) as f:
+            return time.time() - json.load(f)["at"] < 30
+    except (OSError, ValueError, KeyError):
+        return False
+
+
+def handoffs(root):
+    """handoffs.json: {"<milestone>/<story>": {at}} for each story the user took to a session of their own."""
+    try:
+        with open(os.path.join(root, "handoffs.json")) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
 
 
 def make_handler(root):
@@ -63,7 +123,9 @@ def make_handler(root):
 
         def do_GET(self):
             if self.path == "/info":
-                return self.reply(200, {"runDir": root, "repoDir": os.path.dirname(root)})
+                return self.reply(200, {"runDir": root, "repoDir": os.path.dirname(root), "watching": watching(root), "skill": SKILL})
+            if self.path.startswith("/prompt/"):
+                return self.prompt(*([p for p in self.path.split("/") if p][1:] + [None, None])[:2])
             if self.path == "/human":
                 return self.reply(200, availability(root, self.podium()))
             if self.path.split("?")[0] in ("/", "/index.html", "/podium.html"):
@@ -79,6 +141,10 @@ def make_handler(root):
 
         def do_POST(self):
             url = urlparse(self.path)
+            if not url.path.startswith("/human/") and not watching(root):
+                return self.reply(409, {"error": "no orchestrator is watching"})
+            if url.path.startswith("/handoff/"):
+                return self.handoff(url.path[len("/handoff/"):], take=True)
             if url.path.startswith("/human/"):
                 return self.toggle(url.path[len("/human/"):], parse_qs(url.query).get("until", [None])[0])
             parts = [p for p in self.path.split("/") if p]
@@ -94,6 +160,47 @@ def make_handler(root):
             with open(os.path.join(root, "requests.jsonl"), "a") as f:
                 f.write(json.dumps(line) + "\n")
             self.reply(202, {"queued": line})
+
+        def do_DELETE(self):
+            if self.path.startswith("/handoff/"):
+                return self.handoff(self.path[len("/handoff/"):], take=False)
+            self.reply(404, {"error": "unknown action"})
+
+        def handoff(self, sid, take):
+            _, active = load_run(root)
+            story = next((s for s in (active or {}).get("stories", []) if s.get("id") == sid), None)
+            if not story or (take and story.get("status") != "todo"):
+                return self.reply(404, {"error": "no story to hand off" if take else "unknown id"})
+            path, key = os.path.join(root, "handoffs.json"), f"{active['id']}/{sid}"
+            taken = handoffs(root)
+            if take:
+                taken[key] = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            else:
+                taken.pop(key, None)
+            with open(path + ".tmp", "w") as f:
+                json.dump(taken, f, indent=1)
+            os.replace(path + ".tmp", path)
+            if not take:
+                return self.reply(200, {"released": key})
+            self.text(story_prompt(root, active, story))
+
+        def text(self, text):
+            data = text.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def prompt(self, action, id_):
+            milestones, active = load_run(root)
+            if action == "plan" and id_ in {m.get("id") for m in milestones}:
+                text = f"/{SKILL} {id_}\n"
+            elif action == "assign" and active and id_ in {s.get("id") for s in active.get("stories", [])}:
+                text = story_prompt(root, active, next(s for s in active["stories"] if s.get("id") == id_))
+            else:
+                return self.reply(404, {"error": "unknown id"})
+            self.text(text)
 
         def podium(self):
             try:

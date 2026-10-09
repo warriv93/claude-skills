@@ -5,6 +5,7 @@
 - Never push, or update a pull request (title, description, reviewers) unless I've said yes to that specific change. Show me what you'd push and wait. I review everything that leaves my machine.
 - A yes covers one push. If the work changes afterwards, ask again.
 - Exception: invoking `/create-pr` is the yes for everything that run pushes (the branch, the screenshots, the PR and its Copilot review), once its checks are green.
+- Exception: while I'm unavailable, an `/orchestrate-deep-plans` or `/orchestrate-plan` run may open a milestone's PR through `/create-pr` on its own, as a draft only.
 
 ## How to talk to me
 

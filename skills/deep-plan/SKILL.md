@@ -17,7 +17,6 @@ The **ledger** is `.deep-plan/state.md`: current phase, pinned contract commands
 | File | Written in |
 | --- | --- |
 | `recon-note.md` | Phase R |
-| `spec.html`, `questions.json` | Phase 0 (the live spec page and its rounds) |
 | `spec-brief.md` | Phase 0 (amended by 0.5) |
 | `mock/` | Phase 0.5 |
 | `architecture.draft.md` | Phase 0, background (optional) |
@@ -33,7 +32,7 @@ Start every turn by reading the ledger and resuming from it; create it if missin
 
 `.deep-plan/epic.json` exists → `/orchestrate-plan` owns this run:
 
-- At every checkpoint, set `epic.json` `phase`, add each new planning file to `artifacts`, and append a `phase` line to `.deep-plan/events.jsonl`.
+- At every checkpoint, set the active milestone's `phase` in `epic.json`, add each new planning file to its `artifacts`, and append a `phase` line (with `milestone`) to `.deep-plan/events.jsonl`.
 - While a sign-off gate waits on the user, set `needsYou: {reason}`; clear it to `null` on sign-off.
 - Wherever a phase asks the user to re-invoke `/deep-plan`, name `/orchestrate-plan` instead.
 - After Phase 2's checkpoint, return to `/orchestrate-plan`. It builds the slices as stories and re-enters Phase 3 at its quality gate.

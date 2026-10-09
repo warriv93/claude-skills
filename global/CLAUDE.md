@@ -20,6 +20,10 @@ We're working out the best solution together, so write like a colleague at a whi
 
 - Delegate broad codebase searches (many files, unknown location, "how does X work across the repo") to an Explore subagent without asking, and work from its conclusion so file dumps stay out of the main context. Search directly when you already know the file or symbol.
 
+## Asking me decisions
+
+Ask decision questions through `AskUserQuestion`, including `/grilling` rounds: up to four per call (a bigger round takes several calls), the recommended option first and labelled "(Recommended)", each option's description carrying its tradeoff. Open-ended questions with no sensible options stay in text.
+
 ## Blocked on my answers
 
 When a turn ends on questions to me, first start the work off the critical path: anything whose inputs are already settled (research, scaffolding, a document section). Run it as a background subagent, name it in one line under the questions, and have it record every assumption it made. When I answer, reconcile: check each drafted part and assumption against my answers and rewrite what they contradict. Worth it only when the independent work takes more than a few minutes.

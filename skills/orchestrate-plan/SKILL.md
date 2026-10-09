@@ -10,7 +10,7 @@ A **project** holds **epics**. An epic is a product brief, or a theme that group
 
 Outside Claude Code (Antigravity, Gemini): activate the `claude-tool-map` skill first and translate every tool, model and command through it.
 
-Start every turn by reading deep-plan's ledger (`.deep-plan/state.md`) and `.deep-plan/podium.json`, and resume from them. `.deep-plan/` holds deep-plan history but no `podium.json` → Phase 0.
+Start every turn by reading deep-plan's ledger (`.deep-plan/state.md`) and `podium.py status`, and resume from them. `.deep-plan/` holds deep-plan history but no `podium.json` → Phase 0.
 
 ## Run state — `.deep-plan/`
 
@@ -24,7 +24,9 @@ deep-plan's ledger and files stay deep-plan's. This skill adds:
 | `stories/<milestone>/<id>.md` — the story's **brief** | the orchestrator, at breakdown |
 | `stories/<milestone>/<id>.progress` | that story's agent, append-only |
 
-**Single writer:** every file has exactly one writer, so parallel agents never race. Write `podium.json` whole (to a temp file, then `mv`) so the Podium never reads half a file, and give every change a person would want to see one `events.jsonl` line, with `milestone` (and `story`) set.
+**Single writer:** every file has exactly one writer, so parallel agents never race.
+
+**`podium.py`** (`python3 <this skill>/podium/podium.py`; run it bare for its commands) is the orchestrator's only way into `podium.json` and `events.jsonl`: `status` and `get` to read, `set` to change, `commits`, `merge` and `backfill` for git. It writes atomically and keeps the file, which grows to hundreds of kilobytes, out of context. Give every change a person would want to see an `--event`.
 
 [`podium/sample/`](podium/sample/) is the reference run: copy the shapes of `podium.json`, `events.jsonl` and `stories/*` from it. Field values:
 

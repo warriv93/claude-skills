@@ -1,6 +1,6 @@
 # Phase 3 — Build the stories
 
-Everything here acts on the active milestone. A story is **ready** when it is `todo` and every id in `deps` and `overlapAfter` is `done`. A **wave** is the set of stories that are ready at the same moment.
+Everything here acts on the active milestone. A story is **ready** when it is `todo` and every id in `deps` and `overlapAfter` is `done` (`podium.py ready`). A **wave** is the set of stories that are ready at the same moment.
 
 ## Watcher events
 
@@ -16,8 +16,6 @@ Everything here acts on the active milestone. A story is **ready** when it is `t
 | `PERMISSION <id> <tool>` | `status: "approval"`, `needsYou: {reason: "<id> waits for approval: <tool>", story}`, `approval` event |
 | `PERMISSION-CLEARED <id>` | `status: "working"`, `needsYou: null` |
 
-Other `PROGRESS` lines need nothing: the Podium reads the progress files itself.
-
 With `buildAll` on, the next wave starts when every story of the current wave is merged.
 
 ## Dispatch
@@ -25,7 +23,7 @@ With `buildAll` on, the next wave starts when every story of the current wave is
 1. **Worktree on `story/<id>`**, branched from the milestone `branch`:
    - Paseo: `create_workspace` (`isolation: "worktree"`, `mode: "branch-off"`, `path`: repo root, `baseBranch`: the milestone `branch`, `branchName: "story/<id>"`), then `create_agent` (`workspaceId`, `title: "<id> · <title>"`, `provider`: the `claude/…` opus or sonnet id from `list_models`, `settings.modeId: "auto"`, `labels: {epic, story}`, `initialPrompt`: the story prompt).
    - Fallback: `Agent` with `isolation: "worktree"`, `run_in_background: true`, the story's model, and the story prompt preceded by `git switch -c story/<id>`.
-2. **Record:** `status: "working"`, `attempts` + 1, `agent: {backend, id, workspace}`, `branch`, `startedAt`; append a `dispatched` event.
+2. **Record:** `podium.py set <id> status=working attempts+=1 agent=<{backend, id, workspace}> branch=story/<id> startedAt=now --event dispatched backend=… model=…`.
 
 Story prompt, static part first:
 
@@ -43,15 +41,15 @@ On a retry, append: `Previous attempt failed: <reason>` and the last 40 lines of
 
 ## Merge
 
-1. Collect `commits` before merging: `git log --format='%H %s' --shortstat <milestone branch>..story/<id>`.
-2. On the milestone branch in the main checkout: `git merge --no-ff story/<id>`.
-3. **Conflict:** `git merge --abort`. First conflict on this story → tell its agent to rebase `story/<id>` onto the milestone branch, re-run the contract and log `COMMITTED <new sha>`, and append a `conflict` event. Second → a failed attempt.
-4. **Contract** (deep-plan's contract-run rule). Red → `git reset --hard ORIG_HEAD`, then a failed attempt.
-5. **Green:** `status: "done"`, `commits`, `finishedAt`, update `quality.contract`, append a `merged` event, archive the workspace (Paseo `archive_workspace`, or `git worktree remove`). Then dispatch whatever just became ready, if `buildAll` is on and the wave is complete.
+`podium.py merge <id>` merges `story/<id>` into the milestone branch, runs the contract and records the outcome. Act on its first word:
+
+- **`CONFLICT <id> 1`** → tell its agent to rebase `story/<id>` onto the milestone branch, re-run the contract and log `COMMITTED <new sha>`. **`CONFLICT <id> 2`** → a failed attempt.
+- **`RED`** → the merge is undone; a failed attempt, with the printed log tail as its reason.
+- **`MERGED`** → archive the workspace (Paseo `archive_workspace`, or `git worktree remove`). With `buildAll` on and the wave complete, dispatch the stories it names as ready.
 
 ## Failed attempt
 
 - **Attempt 1:** dispatch again in a fresh worktree with the failure in the prompt; append a `retry` event.
-- **Attempt 2:** `status: "failed"` with `failure`; every story that depends on it, directly or through others, → `blocked`; append a `failed` event. With `buildAll` on, let the current wave finish, then set `buildAll: false` and `needsYou: {reason: "<id> failed — retry, skip or fix by hand?", story}` and ask the user in the terminal.
+- **Attempt 2:** `podium.py set <id> status=failed failure=… --event failed reason=…`, which also blocks every story that depends on it. With `buildAll` on, let the current wave finish, then set `buildAll: false` and `needsYou: {reason: "<id> failed — retry, skip or fix by hand?", story}` and ask the user in the terminal.
 
 Done when every story is `done`, or a failure has stopped the run and the user has been asked.

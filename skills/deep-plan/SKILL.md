@@ -32,8 +32,8 @@ Start every turn by reading the ledger and resuming from it; create it if missin
 
 `.deep-plan/podium.json` exists → `/orchestrate-plan` owns this run:
 
-- At every checkpoint, set the active milestone's `phase` in `podium.json`, add each new planning file to its `artifacts`, and append a `phase` line (with `milestone`) to `.deep-plan/events.jsonl`.
-- While a sign-off gate waits on the user, set `needsYou: {reason}`; clear it to `null` on sign-off.
+- Change `podium.json` and `events.jsonl` only through `python3 <this skill>/../orchestrate-plan/podium/podium.py`. At every checkpoint: `set milestone: phase=<phase> artifacts+=<{name, path, phase}> --event phase phase=<phase>`, one `artifacts+=` per new planning file.
+- While a sign-off gate waits on the user, `set . needsYou=<{reason}>`; `set . needsYou=null` on sign-off.
 - Wherever a phase asks the user to re-invoke `/deep-plan`, name `/orchestrate-plan` instead.
 - After Phase 2's checkpoint, return to `/orchestrate-plan`. It builds the slices as stories and re-enters Phase 3 at its quality gate.
 

@@ -16,7 +16,7 @@
    ## Done when         ← one commit on story/<id> with trailer `Story: <id>`, contract green, `COMMITTED <sha>` logged
    ```
 
-6. **Publish:** write the stories into the active milestone in `podium.json` (`status: "todo"`, `attempts: 0`, `brief`, `model`), set its `phase: "build"`, append a `phase` event.
+6. **Publish:** write the stories (`status: "todo"`, `attempts: 0`, `brief`, `model`) to a file, then `podium.py set milestone: stories=@<file> phase=build quality.contract=<the ledger's contract commands as [{"cmd"}]> --event phase phase=build`. `merge` runs that contract.
 7. **Hand over:** start the watcher (SKILL.md, Podium) and tell the user in one message: the Podium link, N stories in M waves, and that they can assign stories one by one or press Build all. End the turn; the watcher wakes you.
 
 Done when every story in `tasks.md` has a brief and a `podium.json` entry, the graph is acyclic with no shared file inside one wave, and the user has the link.

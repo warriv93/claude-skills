@@ -4,7 +4,8 @@
 Prints one line per event the orchestrator must act on:
 
     REQUEST <action> [<id>]         a Podium button (requests.jsonl)
-    PROGRESS <story> <line>         a story agent's progress line (stories/<milestone>/<story>.progress)
+    PROGRESS <story> <line>         a story agent's COMMITTED or FAILED line (stories/<milestone>/<story>.progress);
+                                    the other stages only feed the Podium, so they stay out of the agent's context
     PERMISSION <story> <tool>       a Paseo agent waits for approval   (--paseo)
     PERMISSION-CLEARED <story>      that approval was answered          (--paseo)
     IDLE <story>                    a working story's Paseo agent went idle (--paseo)
@@ -68,7 +69,7 @@ def main():
                     except ValueError:
                         continue
                     emit(f"REQUEST {r.get('action')} {r.get('story') or ''}".rstrip())
-                else:
+                elif line.split()[1:2] in (["COMMITTED"], ["FAILED"]):
                     emit(f"PROGRESS {os.path.basename(path)[:-len('.progress')]} {line}")
 
         if args.paseo and time.time() - last_paseo > 10:

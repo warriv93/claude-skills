@@ -39,7 +39,7 @@ deep-plan's ledger and files stay deep-plan's. This skill adds:
 
 ## Podium
 
-- **Start:** run `python3 <this skill>/podium/server.py --dir .deep-plan` in the background. It prints its URL (port 8765, or the next free one). Record `podium: <url>` in the ledger, `open <url>`, and give the user the link.
+- **Start:** run `python3 <this skill>/podium/server.py --dir .deep-plan` in the background. It prints its URL (port 8765, or the next free one). Record `podium: <url>` in the ledger and give the user the link. **Open it in Paseo's browser** when its MCP tools are available: `browser_list_tabs`; a tab already on the URL → leave it; otherwise `browser_new_tab` with the URL, then check its title with `browser_evaluate`. A `browser_timeout` can still open the tab, so list the tabs again before retrying. A tab whose title isn't the Podium's (Paseo's agent-opened tabs can fail to reach local servers) → `browser_close_tab` it. No working tab, or no Paseo → `open <url>`.
 - **Resume:** `curl -s <url>/info`; no answer → start it again.
 - **Watch:** run `python3 <this skill>/podium/watch.py --dir .deep-plan` (add `--paseo <paseo binary>` when Paseo dispatches) under `Monitor`. Each line it prints is an event to act on; [phase-3-build.md](phase-3-build.md) says how.
 

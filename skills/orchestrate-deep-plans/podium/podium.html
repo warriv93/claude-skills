@@ -108,8 +108,24 @@ code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:
 .banner.needs { background: var(--amber-soft); border-color: rgba(255,159,10,.35); }
 .banner.done { background: var(--gray-soft); color: var(--text-2); }
 .banner.assumed { background: var(--accent-soft); border-color: rgba(0,113,227,.22); flex-direction: column; align-items: stretch; gap: 6px; }
-.banner.assumed ol { margin: 0; padding-left: 20px; font-size: 13px; }
+.banner.assumed .assumed-list { list-style: none; margin: 0; padding: 0; font-size: 13px; max-height: 420px; overflow-y: auto; }
+.banner.assumed li { padding: 6px 0; border-top: 1px solid rgba(0,113,227,.15); }
+.banner.assumed li .row { display: flex; gap: 10px; align-items: center; cursor: pointer; border-radius: 8px; }
+.banner.assumed li .row:hover .q { color: var(--accent); }
+.banner.assumed li .q { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.banner.assumed .ams { font-size: 11px; font-weight: 700; color: var(--text-2); background: var(--gray-soft); border-radius: 5px; padding: 1px 6px; margin-right: 8px; }
+.banner.assumed .chev { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: none; border-radius: 8px; background: rgba(0,113,227,.08); color: var(--accent); cursor: pointer; transition: transform .15s; }
+.banner.assumed .chev:hover { background: rgba(0,113,227,.12); }
+.banner.assumed li.open .chev { transform: rotate(180deg); }
+.banner.assumed .more { margin: 6px 36px 4px 34px; display: grid; gap: 4px; color: var(--text-2); }
+.banner.assumed .more .k { display: inline-block; min-width: 70px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+.banner.assumed li:first-child { border-top: none; }
 .banner.assumed li .sub { margin-left: 4px; }
+.banner.assumed .aid { display: inline-block; min-width: 26px; color: var(--accent); }
+.banner.assumed .settle { display: flex; gap: 6px; flex: none; }
+.banner.assumed .settle .btn { padding: 3px 11px; font-size: 12px; }
+.banner.assumed .settled { flex: none; font-size: 12px; font-weight: 600; color: var(--green); white-space: nowrap; }
+.banner.assumed .settled.reverse { color: var(--amber); }
 .banner.idle { background: var(--card); border-color: var(--line); box-shadow: var(--shadow); }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .wchip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); cursor: pointer; font-size: 13px; box-shadow: var(--shadow); }
@@ -127,6 +143,10 @@ a.wchip { color: inherit; text-decoration: none; }
 .bar3 i.on { background: var(--green-dot); }
 .node .doing { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
 .node .doing .bar3 { margin-left: auto; }
+.node .doing.why { display: block; color: var(--red); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node .since { color: var(--text-3); font-variant-numeric: tabular-nums; }
+.agentlink { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap; }
+.agentlink:hover { text-decoration: underline; }
 .pulse { position: relative; width: 9px; height: 9px; border-radius: 50%; background: var(--green-dot); flex: none; }
 .pulse::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--green-dot); animation: pulse 1.8s ease-out infinite; }
 .pulse.amber, .pulse.amber::after { background: var(--amber-dot); }
@@ -182,14 +202,16 @@ a.wchip { color: inherit; text-decoration: none; }
 }
 .node:hover { transform: translateY(-2px); box-shadow: var(--shadow-hi); }
 .node:focus-visible { outline: 3px solid var(--accent-soft); border-color: var(--accent); }
-.node.sel { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-hi); }
 .node.dim { opacity: .28; }
-.node.done { background: var(--card); }
+/* landed work lies flat and recessed; live work is tinted, ringed and lifted */
+.node.done { background: var(--bg); box-shadow: none; }
+.node.done:hover { transform: none; box-shadow: none; border-color: var(--line-2); }
 .node.done .title { color: var(--text-2); }
 .node.blocked { opacity: .62; }
-.node.working { border-color: rgba(52,199,89,.45); }
-.node.approval, .node.waits { border-color: rgba(255,159,10,.55); }
-.node.failed { border-color: rgba(255,59,48,.45); }
+.node.working { background: linear-gradient(var(--green-soft), var(--green-soft)), var(--card); border: 1.5px solid var(--green-dot); box-shadow: 0 0 0 4px var(--green-soft), var(--shadow-hi); }
+.node.approval, .node.waits { background: linear-gradient(var(--amber-soft), var(--amber-soft)), var(--card); border: 1.5px solid var(--amber-dot); box-shadow: 0 0 0 4px var(--amber-soft), var(--shadow-hi); }
+.node.failed { background: linear-gradient(var(--red-soft), var(--red-soft)), var(--card); border: 1.5px solid var(--red); box-shadow: 0 0 0 4px var(--red-soft), var(--shadow-hi); }
+.node.sel { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-hi); }
 .node .top { display: flex; align-items: center; gap: 8px; }
 .sid { font-size: 11px; font-weight: 700; color: var(--text-2); background: var(--gray-soft); border-radius: 6px; padding: 1px 6px; letter-spacing: .02em; }
 .model { margin-left: auto; font-size: 11px; color: var(--text-3); }
@@ -237,7 +259,14 @@ a.wchip { color: inherit; text-decoration: none; }
 .quality > summary::-webkit-details-marker { display: none; }
 .quality > summary .chev { margin-left: auto; color: var(--text-3); transition: transform .2s; }
 .quality[open] > summary .chev { transform: rotate(90deg); }
-.qsum { font-weight: 500; font-size: 13px; color: var(--text-2); }
+.qsum { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 500; font-size: 13px; color: var(--text-2); }
+.qpill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 999px; background: var(--gray-soft); white-space: nowrap; }
+.qpill > span:first-child { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; color: #fff; font-weight: 800; }
+.qpill.ok { background: var(--green-soft); color: var(--green); }
+.qpill.bad { background: var(--red-soft); color: var(--red); font-weight: 600; }
+.qpill.pend { color: var(--text-2); }
+.qpill.pend > span:first-child { border: 1.5px solid var(--text-3); }
+.qms { font-weight: 600; color: var(--text-2); }
 .qgrid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0; border-top: 1px solid var(--line); }
 .qcol { padding: 14px 18px; border-left: 1px solid var(--line); min-width: 0; }
 .qcol:first-child { border-left: 0; }
@@ -252,6 +281,10 @@ a.wchip { color: inherit; text-decoration: none; }
 /* ---------- feed ---------- */
 .feed { position: sticky; top: 84px; max-height: calc(100vh - 104px); display: flex; flex-direction: column; }
 .feed h2 { margin: 0; padding: 14px 18px 10px; font-size: 13px; font-weight: 600; color: var(--text-2); letter-spacing: .02em; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+.feed-filter { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 12px 10px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.feed-filter button { border: 0; background: transparent; color: var(--text-2); font-size: 12px; font-weight: 500; padding: 4px 8px; border-radius: 999px; cursor: pointer; }
+.feed-filter button:hover { background: var(--gray-soft); }
+.feed-filter button.on { background: var(--text); color: var(--card); font-weight: 600; }
 .feed ol { list-style: none; margin: 0; padding: 0 10px 12px; overflow-y: auto; }
 .ev { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 8px; border-radius: 10px; font-size: 13px; }
 .ev:hover { background: var(--card-2); }
@@ -320,7 +353,8 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
 .ecard.working { border-color: rgba(52,199,89,.45); }
 .ecard.waits { border-color: rgba(255,159,10,.55); }
 .ecard.dim { opacity: .28; }
-.ecard .top { display: flex; align-items: center; gap: 8px; }
+.ecard .top { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-width: 0; }
+.ecard .epic-row .mockbtn { margin-left: auto; }
 .ecard .top .when { margin-left: auto; }
 .ecard h3 { margin: 0; font-size: 17px; letter-spacing: -.015em; }
 .ecard p { margin: 0; color: var(--text-2); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
@@ -413,6 +447,7 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
   </main>
   <aside class="card feed" id="feed">
     <h2>Activity <button class="close-x" id="feed-close" aria-label="Close">✕</button></h2>
+    <div class="feed-filter" id="feed-filter"></div>
     <ol id="events"></ol>
   </aside>
 </div>
@@ -455,7 +490,7 @@ function vsc(path, base = "runDir") {
   if (!S.info || !path) return null;
   return "vscode://file" + encodeURI(`${S.info[base]}/${path}`.replace(/\/\.?\//g, "/"));
 }
-fetch("/info", { cache: "no-store" }).then((r) => r.json()).then((i) => { S.info = i; if (S.selected) renderSheet(); }).catch(() => {});
+fetch("/info", { cache: "no-store" }).then((r) => r.json()).then((i) => { S.info = i; if (S.epic) render(); if (S.selected) renderSheet(); }).catch(() => {});
 async function getText(path) {
   const r = await fetch(path, { cache: "no-store" });
   if (!r.ok) throw new Error(r.status);
@@ -530,6 +565,15 @@ async function poll() {
       const h = await getText(S.base + "handoffs.json");
       if (h !== S.handoffsRaw) { S.handoffsRaw = h; S.handoffs = JSON.parse(h); changed = true; }
     } catch { if (S.handoffsRaw) { S.handoffsRaw = ""; S.handoffs = {}; changed = true; } }
+    try {
+      /* answers already sent: an assumption stays open in podium.json until the orchestrator applies it */
+      const rq = await getText(S.base + "requests.jsonl");
+      if (rq !== S.requestsRaw) {
+        S.requestsRaw = rq;
+        S.settling = Object.fromEntries(parseJsonl(rq).filter((r) => ["confirm", "reverse"].includes(r.action)).map((r) => [String(r.story), r.action]));
+        changed = true;
+      }
+    } catch { /* no requests yet */ }
     const actx = S.project.active ? epicCtx(S.project.active.epic) : null;
     const am = actx?.milestones.find((m) => m.id === actx.active);
     const live = (am?.stories || []).filter((s) => ["working", "approval"].includes(s.status) || S.handoffs[key(am.id, s.id)] || (S.view === am.id && s.id === S.selected));
@@ -678,7 +722,7 @@ function renderProject() {
     $("banner").innerHTML = needsBanner() + assumedBanner() + `<div class="banner idle"><span class="label">Idle</span><span class="sub">${P.epics.length} epics · ${landed} milestones landed · open an epic to plan its next milestone</span></div>`;
   }
   $("q").placeholder = "Search epics and milestones";
-  setHeading([["", "All epics", null]], "Project", esc(P.project.title), `${P.epics.length} epics · each is a product brief or a theme; open one to see its milestones`);
+  setHeading([["", "All epics", null]], "", "", `${P.epics.length} epics · each is a product brief or a theme; open one to see its milestones`);
   $("quality").hidden = true;
   const m = $("map");
   m.style.width = ""; m.style.height = ""; m.style.zoom = 1;
@@ -725,9 +769,9 @@ function epicCard({ E, last, on }) {
   const badge = { working: (wt ? `<span class="pulse amber"></span><span class="badge needs">Waiting on you · ${esc(S.project.active?.milestone)}</span>` : `<span class="pulse"></span><span class="badge working">Working on ${esc(S.project.active?.milestone)}</span>`) + (am ? `<span class="doing-inline">${msDoing(am)}</span>` : ""),
     done: `<span class="badge done">Completed</span>`, planned: `<span class="badge draft">Up next</span>` }[st];
   return `<div class="ecard ${wt ? "waits" : st}" data-epic="${esc(E.id)}" tabindex="0">
-    <div class="top">${badge}${mockBtn(E)}<span class="when">${esc(last)}</span></div>
+    <div class="top">${badge}<span class="when">${esc(last)}</span></div>
     <h3>${esc(E.title)}</h3><p>${esc(E.summary || "")}</p>
-    <div class="epic-row">${ring(ms.length ? done / ms.length : 0)}<div class="epic-stat"><b>${done}</b> of ${ms.length} milestones landed<br>${stories} stories</div></div></div>`;
+    <div class="epic-row">${ring(ms.length ? done / ms.length : 0)}<div class="epic-stat"><b>${done}</b> of ${ms.length} milestones landed<br>${stories} stories</div>${mockBtn(E)}</div></div>`;
 }
 
 /* the stepper follows the milestone being planned or built */
@@ -803,10 +847,35 @@ function renderHuman() {
 }
 /* decisions the orchestrator took while the user was away, until they review them */
 function assumedBanner() {
-  const open = (S.project?.assumptions || []).filter((a) => a.status === "open");
+  const open = (S.project?.assumptions || []).map((a, i) => ({ ...a, i })).filter((a) => a.status === "open");
   if (!open.length) return "";
-  const items = open.slice(-5).map((a) => `<li>${msLink(a.milestone)}${a.story ? `<a data-open="${esc(a.story)}" data-ms="${esc(a.milestone || "")}">${esc(a.story)}</a> · ` : ""}${esc(a.question)} → <b>${esc(a.choice)}</b><span class="sub">${esc(a.why)}</span></li>`).join("");
-  return `<div class="banner assumed"><span class="label">Decided while you were away · ${open.length}</span><span class="sub">The orchestrator puts these to you when you're back${open.length > 5 ? "; the latest five:" : ""}</span><ol>${items}</ol></div>`;
+  const word = { confirm: "Confirmed", reverse: "Reversed" };
+  const items = open.map((a) => {
+    const p = S.settling?.[String(a.i)], on = S.expanded?.has(a.i);
+    const act = p ? `<span class="settled ${p}">${word[p]}</span>`
+      : `<span class="settle"><button class="btn" data-settle="confirm" data-id="${a.i}">Confirm</button><button class="btn ghost" data-settle="reverse" data-id="${a.i}">Reverse…</button></span>`;
+    const more = on ? `<div class="more"><div><span class="k">Question</span>${a.story ? `<a data-open="${esc(a.story)}" data-ms="${esc(a.milestone || "")}">${esc(a.story)}</a> · ` : ""}${esc(a.question)}</div><div><span class="k">Decided</span><b>${esc(a.choice)}</b></div><div><span class="k">Why</span>${esc(a.why)}</div></div>` : "";
+    return `<li class="${on ? "open" : ""}"><div class="row" data-expand="${a.i}"><span class="q"><b class="aid">A${a.i}</b>${a.milestone ? `<span class="ams">${esc(a.milestone)}</span>` : ""}${esc(a.short || a.question)}</span>${act}<button class="chev" data-expand="${a.i}" title="${on ? "Less" : "More"}" aria-expanded="${on}"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>${more}</li>`;
+  }).join("");
+  const left = open.filter((a) => !S.settling?.[String(a.i)]).length;
+  return `<div class="banner assumed"><span class="label">Decided while you were away · ${left ? `${left} to settle` : "all answered"}</span><span class="sub">Confirm or reverse each; the arrow on the right shows the details</span><ul class="assumed-list">${items}</ul></div>`;
+}
+/* the user's answer to an assumption: a request the orchestrator applies (it owns podium.json) */
+async function settle(action, id) {
+  let note = "";
+  if (action === "reverse") {
+    note = window.prompt(`Reverse A${id}: what should it be instead? (optional)`, "");
+    if (note === null) return;
+  }
+  try {
+    const r = await fetch(`/${action}/${encodeURIComponent(id)}${note ? `?note=${encodeURIComponent(note)}` : ""}`, { method: "POST" });
+    if (!r.ok) throw new Error(r.status);
+    S.settling = { ...(S.settling || {}), [id]: action };
+    render();
+    toast(action === "confirm" ? `A${id} confirmed` : `A${id} reversed: the orchestrator reworks what it shaped`);
+  } catch {
+    toast("The Podium server didn't accept that: is server.py running?");
+  }
 }
 function workingBanner(am, working) {
   const chips = working.map((s) => {
@@ -820,7 +889,8 @@ function workingBanner(am, working) {
 function renderFilters() {
   const map = byId(), counts = { all: 0 };
   items().forEach((s) => { counts.all++; const k = filterKey(viewStatus(s, map)); counts[k] = (counts[k] || 0) + 1; });
-  $("filters").innerHTML = FILTERS.map(([k, l]) => `<button class="${S.filter === k ? "on" : ""}" data-filter="${k}">${l}<span class="n">${counts[k] || 0}</span></button>`).join("");
+  const vm = viewMs(), merged = vm && vm.status !== "done"; // a story is done only once its milestone lands
+  $("filters").innerHTML = FILTERS.map(([k, l]) => [k, k === "done" && merged ? "Merged" : l]).map(([k, l]) => `<button class="${S.filter === k ? "on" : ""}" data-filter="${k}">${l}<span class="n">${counts[k] || 0}</span></button>`).join("");
   $("q").placeholder = viewMs() ? "Search stories, files, ids" : "Search milestones, brief items, ids";
 }
 
@@ -845,7 +915,8 @@ function setHeading(trail, kind, title, sub) {
   const up = [...trail].reverse().find(([, , attr]) => attr); // the nearest level above this one
   // name the list you land on: an epic's page lists its milestones
   const back = up ? `<button class="btn ghost back" ${up[2]}>‹ Back to ${up[0] === "Epic" ? "milestones" : up[1].toLowerCase()}</button>` : "";
-  $("page-title").innerHTML = `${back}<span class="kind-chip">${kind}</span><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ""}`;
+  // The epics page passes no kind or title: the header above already names the project.
+  $("page-title").innerHTML = `${back}${kind ? `<span class="kind-chip">${kind}</span>` : ""}${title ? `<h1>${title}</h1>` : ""}${sub ? `<div class="sub">${sub}</div>` : ""}`;
 }
 
 function renderMap() {
@@ -936,7 +1007,7 @@ function milestoneNode(m, p, map) {
   else if (st === "ready") foot = `<span class="badge ready">Ready</span><button class="btn" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}`;
   else foot = `<span class="badge waiting">Waiting on ${esc((m.deps || []).filter((d) => map[d]?.status !== "done").join(", "))}</span>`;
   return `<div class="node ms ${st === "working" && msWaits(m) ? "waits" : st} ${S.selected === m.id ? "sel" : ""}" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" ${stories.length ? `data-drill="${esc(m.id)}"` : `data-open="${esc(m.id)}"`} data-id="${esc(m.id)}" tabindex="0">
-    <div class="top"><span class="sid">${esc(m.id)}</span>${mockBtn(m)}<span class="model">${stories.length ? `${done}/${stories.length} slices ›` : ""}</span></div>
+    <div class="top"><span class="sid">${esc(m.id)}</span>${mockBtn(m)}<span class="model">${stories.length ? `${done}/${stories.length} stories ›` : ""}</span></div>
     <span class="title">${esc(m.title)}</span>
     <div class="foot">${foot}</div></div>`;
 }
@@ -948,15 +1019,27 @@ function artifactNode(s, p) {
     <div class="foot"><span class="mono">${esc(s.artifact.path)}</span></div></div>`;
 }
 
+/* a Paseo agent's deep link, opening its chat in Paseo Desktop */
+function agentHref(s) {
+  return s.agent?.backend === "paseo" && s.agent.id && S.info?.paseoServer ? `paseo://h/${encodeURIComponent(S.info.paseoServer)}/agent/${encodeURIComponent(s.agent.id)}` : null;
+}
+const agentLink = (s) => ((h) => (h ? `<a class="agentlink" href="${esc(h)}" title="Open this story's agent in Paseo">Paseo ↗</a>` : ""))(agentHref(s));
+const since = (at) => (at ? `<span class="since" data-since="${esc(at)}" title="Running since ${esc(clock(at))}">${dur(Date.now() - Date.parse(at))}</span>` : "");
+/* why a story failed: its last FAILED progress line, else the orchestrator's note */
+function failReason(ms, s) {
+  const f = progressLines(ms, s.id).filter((l) => l.stage === "FAILED").pop();
+  return f?.note || s.note || "";
+}
+
 function storyNode(s, p, map) {
   const vm = viewMs(), live = vm.id === S.epic.active && vm.status === "working";
   const st = viewStatus(s, map);
   let foot = "";
   if (st === "done") foot = `<span class="badge done">${storyDone(vm)}</span>${s.commits?.[0] ? `<span class="when mono">${esc(s.commits[0].sha.slice(0, 7))}</span>` : ""}`;
-  else if (st === "working") foot = `<span class="pulse"></span><span class="badge working">Working on</span>`;
-  else if (st === "approval") foot = `<span class="pulse amber"></span><span class="badge approval">Waiting for approval</span>`;
+  else if (st === "working") foot = `<span class="pulse"></span><span class="badge working">Working on</span>${since(s.startedAt)}${agentLink(s)}`;
+  else if (st === "approval") foot = `<span class="pulse amber"></span><span class="badge approval">Waiting for approval</span>${agentLink(s)}`;
   else if (st === "elsewhere") foot = `<span class="badge elsewhere">In another session</span>${releaseBtn(s.id)}`;
-  else if (st === "failed") foot = `<span class="badge failed">Failed · ${s.attempts || 0}/2</span>`;
+  else if (st === "failed") foot = `<span class="badge failed">Failed · ${s.attempts || 0}/2</span>${agentLink(s)}`;
   else if (st === "blocked") foot = `<span class="badge blocked">Blocked by ${esc((s.deps || []).filter((d) => map[d]?.status !== "done").join(", "))}</span>`;
   else if (st === "dropped") foot = `<span class="badge dropped">Dropped</span>`;
   else if (st === "ready") foot = `<span class="badge ready">Ready</span>${live ? `<button class="btn" data-act="assign" data-id="${esc(s.id)}">Assign subagent</button>${copyBtn("assign", s.id)}` : ""}`;
@@ -967,7 +1050,7 @@ function storyNode(s, p, map) {
   return `<div class="node ${st} ${S.selected === s.id ? "sel" : ""}" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" data-open="${esc(s.id)}" data-id="${esc(s.id)}" tabindex="0">
     <div class="top"><span class="sid">${esc(s.id)}</span><span class="model">${esc(s.model || "")}</span></div>
     <span class="title">${esc(s.title)}</span>
-    ${st === "elsewhere" && !progressLines(vm.id, s.id).length ? `<div class="doing">Copied · not started yet</div>` : ""}${["working", "elsewhere"].includes(st) && (st === "working" || progressLines(vm.id, s.id).length) ? (([l, n]) => `<div class="doing">${esc(l)}${bar3(n)}</div>`)(doing(vm.id, s.id)) : ""}
+    ${st === "elsewhere" && !progressLines(vm.id, s.id).length ? `<div class="doing">Copied · not started yet</div>` : ""}${["working", "elsewhere"].includes(st) && (st === "working" || progressLines(vm.id, s.id).length) ? (([l, n]) => `<div class="doing">${esc(l)}${bar3(n)}</div>`)(doing(vm.id, s.id)) : ""}${st === "failed" && failReason(vm.id, s) ? `<div class="doing why" title="${esc(failReason(vm.id, s))}">${esc(failReason(vm.id, s))}</div>` : ""}
     <div class="foot">${foot}</div></div>`;
 }
 
@@ -994,19 +1077,31 @@ function renderQuality() {
   const contract = q.contract || [], gate = q.gate, criteria = q.criteria || [];
   const passing = contract.filter((c) => c.ok).length;
   const crit = criteria.filter((c) => c.pass).length;
-  $("qsum").textContent = `${S.epic.single ? "" : `${m.id} · `}Contract ${passing}/${contract.length} · ${gate ? `${gate.findings} findings` : "gate not run"} · criteria ${crit}/${criteria.length}`;
   const mark = (v) => (v === true ? `<span class="ok">✓</span>` : v === false ? `<span class="bad">✕</span>` : `<span class="pend"></span>`);
+  // one pill per column: green when it passed, red when something failed, grey while it waits
+  const state = (vals) => (vals.includes(false) ? "bad" : vals.length && vals.every((v) => v === true) ? "ok" : "pend");
+  const pill = (st, text) => `<span class="qpill ${st}">${st === "ok" ? `<span class="ok">✓</span>` : st === "bad" ? `<span class="bad">✕</span>` : "<span></span>"}${text}</span>`;
+  const gateOk = gate ? gate.findings === gate.fixed + gate.skipped : null;
+  const failing = criteria.filter((c) => c.pass === false), open = criteria.filter((c) => c.pass == null);
+  const critNote = failing.length ? ` · ${failing.map((c) => esc(c.id || "")).join(", ")} failed` : open.length ? ` · ${open.map((c) => esc(c.id || "")).join(", ")} open` : "";
+  const pills = [
+    pill(state(contract.map((c) => c.ok)), `Contract ${passing}/${contract.length}`),
+    pill(gate ? state([gateOk]) : "pend", gate ? `Gate · ${gate.fixed} of ${gate.findings} fixed` : "Gate not run"),
+    pill(state(criteria.map((c) => c.pass)), `Criteria ${crit}/${criteria.length}${critNote}`),
+  ];
+  $("qsum").innerHTML = `${S.epic.single ? "" : `<span class="qms">${esc(m.id)}</span>`}${pills.join("")}`;
   $("qgrid").innerHTML = `
     <div class="qcol"><h3>Contract</h3>${contract.map((c) => `<div class="qline">${mark(c.ok)}<code>${esc(c.cmd)}</code><span class="when">${esc(clock(c.at))}</span></div>`).join("") || `<div class="muted">No runs yet</div>`}</div>
     <div class="qcol"><h3>Quality gate</h3>${gate ? `<div class="qline">${mark(gate.findings === gate.fixed + gate.skipped)}<span><b>${gate.findings}</b> findings · ${gate.fixed} fixed · ${gate.skipped} skipped</span></div>${gate.note ? `<div class="qline muted">${esc(gate.note)}</div>` : ""}<div class="qline muted"><code>${esc(gate.file || "")}</code></div>` : `<div class="muted">Runs after the last story merges</div>`}</div>
     <div class="qcol"><h3>Success criteria</h3>${criteria.map((c) => `<div class="qline">${mark(c.pass)}<span>${esc(c.text)}</span></div>`).join("") || `<div class="muted">Defined in the spec</div>`}</div>`;
-  if (["gate", "verify", "land"].includes(m.phase) && !S.qualityTouched) $("quality").open = true;
+  // stays one line while nothing is red; opens itself when a check fails
+  if (!S.qualityTouched) $("quality").open = contract.some((c) => c.ok === false) || gateOk === false || failing.length > 0;
 }
 
 const EV = {
   dispatched: ["→", "blue", (e) => `${link(e)} dispatched to ${esc(e.backend || "subagent")}${e.model ? ` · ${esc(e.model)}` : ""}`],
   commit: ["●", "", (e) => `${link(e)} committed <code>${esc((e.sha || "").slice(0, 7))}</code> ${esc(e.subject || "")}`],
-  merged: ["✓", "green", (e) => `${link(e)} merged into ${esc(e.into || "the milestone branch")}`],
+  merged: ["✓", "green", (e) => `${link(e)} merged${e._commit?.subject ? `: ${esc(e._commit.subject)}` : ` into ${esc(e.into || "the milestone branch")}`}`],
   conflict: ["!", "amber", (e) => `${link(e)} merge conflict — rebasing`],
   retry: ["↻", "amber", (e) => `${link(e)} retry ${esc(e.attempt || "")} — ${esc(e.reason || "")}`],
   failed: ["✕", "red", (e) => `${link(e)} failed — ${esc(e.reason || "")}`],
@@ -1016,7 +1111,7 @@ const EV = {
   landed: ["✓", "green", (e) => `${msLink(e.milestone)}landed${e.sha ? ` <code>${esc(e.sha.slice(0, 7))}</code>` : ""} ${esc(e.subject || "")}`],
   status: ["◇", "", (e) => `${msLink(e.milestone)}${esc(e.text || "")}`],
   finding: ["⚑", "amber", (e) => `${msLink(e.milestone)}Gate finding: ${esc(e.text || "")}`],
-  needs: ["?", "amber", (e) => `Needs you: ${esc(e.reason || "")}`],
+  needs: ["?", "amber", (e) => `${msLink(e.milestone)}Needs you: ${esc(e.reason || e.text || "a decision")}`],
   request: ["⌘", "", (e) => `Podium: ${esc(e.text || "")}`],
   human: ["◐", "", (e) => e.mode === "available" ? "You're available — open decisions go to you" : "You're away — the orchestrator decides on its own"],
   assumed: ["◇", "blue", (e) => `${link(e)} Decided: ${esc(e.question || "")} → <b>${esc(e.choice || "")}</b>`],
@@ -1031,11 +1126,39 @@ function link(e) {
 }
 const multiMs = () => !!S.project && S.project.epics.reduce((n, E) => n + (E.milestones || [1]).length, 0) > 1;
 function msLink(id) { return id && multiMs() ? `<a data-drill="${esc(id)}">${esc(id)}</a> ` : ""; }
+/* feed filters: which event types each chip shows; All folds a story's commit into its merge */
+const FEED = {
+  all: null,
+  decisions: ["assumed", "settled", "needs", "human", "request", "denied", "approval"],
+  stories: ["dispatched", "merged", "failed", "retry", "conflict", "commit"],
+  phases: ["phase", "planned", "landed", "pr", "status", "gate", "finding", "note", "adopted", "build-all"],
+  commits: ["commit"],
+};
+function feedEvents() {
+  const f = S.feedFilter || "all", types = FEED[f];
+  const merged = new Map(S.events.filter((e) => e.type === "merged" && e.story).map((e) => [key(e.milestone || "", e.story), e]));
+  const commitOf = new Map();
+  S.events.forEach((e) => { if (e.type === "commit" && e.story) commitOf.set(key(e.milestone || "", e.story), e); });
+  const out = [];
+  for (const e of S.events.slice().reverse()) {
+    if (types && !types.includes(e.type)) continue;
+    if (f === "stories" && e.type === "commit" && !e.story) continue;
+    // a story's commit says nothing its merge doesn't: show one line per story
+    if (f !== "commits" && e.type === "commit" && e.story && merged.has(key(e.milestone || "", e.story))) continue;
+    const prev = out[out.length - 1];
+    if (prev && prev.type === e.type && (prev.text || prev.subject || prev.question) === (e.text || e.subject || e.question) && prev.story === e.story) continue;
+    out.push(e.type === "merged" && e.story ? { ...e, _commit: commitOf.get(key(e.milestone || "", e.story)) } : e);
+    if (out.length >= 300) break;
+  }
+  return out;
+}
 function renderEvents() {
-  $("events").innerHTML = S.events.slice().reverse().slice(0, 300).map((e) => {
+  const f = S.feedFilter || "all";
+  $("feed-filter").innerHTML = Object.keys(FEED).map((k) => `<button class="${k === f ? "on" : ""}" data-feed="${k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("");
+  $("events").innerHTML = feedEvents().map((e) => {
     const [ico, cls, fn] = EV[e.type] || ["•", "", () => esc(e.text || e.type)];
     return `<li class="ev"><span class="ico ${cls}">${ico}</span><div><div>${fn(e)}</div><div class="meta">${esc(when(e.at))}</div></div></li>`;
-  }).join("") || `<li class="muted" style="padding:8px">Nothing yet</li>`;
+  }).join("") || `<li class="muted" style="padding:8px">${f === "all" ? "Nothing yet" : "Nothing here yet"}</li>`;
 }
 
 /* ---------- navigation ---------- */
@@ -1115,7 +1238,7 @@ function renderSheet() {
     <div class="sec"><h3>Dependencies</h3><dl class="kv"><dt>Blocked by</dt><dd><div class="links">${(s.deps || []).map((x) => chip(x, map)).join("") || `<span class="muted">Nothing — starts from the milestone</span>`}</div></dd><dt>Blocks</dt><dd><div class="links">${blocks.map((x) => chip(x.id, map)).join("") || `<span class="muted">Nothing</span>`}</div></dd>${(s.overlapAfter || []).length ? `<dt>After (files)</dt><dd><div class="links">${s.overlapAfter.map((x) => chip(x, map)).join("")}</div></dd>` : ""}</dl></div>
     ${(s.files || []).length ? `<div class="sec"><h3>Files in scope</h3>${s.files.map((f) => fileLink(f, "repoDir")).join("")}</div>` : ""}
     ${(s.tasks || []).length ? `<div class="sec"><h3>Tasks</h3><div class="links">${s.tasks.map((t) => `<span class="link-chip mono">${esc(t)}</span>`).join("")}</div></div>` : ""}
-    ${live || s.agent ? `<div class="sec"><h3>Run</h3><dl class="kv"><dt>Status</dt><dd>${label}</dd><dt>Attempts</dt><dd>${s.attempts || 0} of 2</dd><dt>Model</dt><dd>${esc(s.model || "—")}</dd><dt>Agent</dt><dd class="mono">${s.agent ? `${esc(s.agent.backend)} · ${esc(s.agent.id)}` : "—"}</dd><dt>Branch</dt><dd class="mono">${esc(s.branch || "—")}</dd><dt>Elapsed</dt><dd>${elapsed}</dd></dl></div>` : ""}
+    ${live || s.agent ? `<div class="sec"><h3>Run</h3><dl class="kv"><dt>Status</dt><dd>${label}</dd><dt>Attempts</dt><dd>${s.attempts || 0} of 2</dd><dt>Model</dt><dd>${esc(s.model || "—")}</dd><dt>Agent</dt><dd class="mono">${s.agent ? `${esc(s.agent.backend)} · ${esc(s.agent.id)}${agentHref(s) ? ` · <a class="prlink" href="${esc(agentHref(s))}">open in Paseo ↗</a>` : ""}` : "—"}</dd><dt>Branch</dt><dd class="mono">${esc(s.branch || "—")}</dd><dt>Elapsed</dt><dd>${elapsed}</dd></dl></div>` : ""}
     ${live ? `<div class="sec"><h3>Progress</h3>${log.length ? `<ul class="log">${log.map((l) => `<li><span class="t">${esc(clock(l.at))}</span><span><span class="stage ${esc(l.stage)}">${esc(l.stage)}</span></span><span>${esc(l.note)}</span></li>`).join("")}</ul>` : `<div class="muted">No progress yet</div>`}</div>` : ""}
     <div class="sec"><h3>Commits</h3>${(s.commits || []).map((c) => `<div class="commit">${shaLink(c.sha)}<span>${esc(c.subject)}</span><span class="mono">${c.plus != null ? `<span class="plus">+${c.plus}</span> <span class="minus">−${c.minus || 0}</span>` : ""}</span></div>`).join("") || `<div class="muted">None yet</div>`}</div>`;
 }
@@ -1127,7 +1250,7 @@ function milestoneSheet(m) {
   const label = wt ? "Waiting on you" : { done: "Completed", working: "Working on", ready: "Ready", waiting: "Waiting on dependencies", draft: "Draft", parked: "Parked", later: "Later", dropped: "Dropped" }[st] || st;
   const blocks = S.epic.milestones.filter((x) => (x.deps || []).includes(m.id));
   const actions = [
-    stories.length && S.view !== m.id && !S.epic.single ? `<button class="btn big" data-drill="${esc(m.id)}">Open slice map ›</button>` : "",
+    stories.length && S.view !== m.id && !S.epic.single ? `<button class="btn big" data-drill="${esc(m.id)}">Open story map ›</button>` : "",
     [...UNSTARTED, "ready"].includes(st) ? `<button class="btn big ${stories.length ? "ghost" : ""}" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}` : "",
   ].join(" ");
   const q = m.quality?.gate;
@@ -1141,7 +1264,7 @@ function milestoneSheet(m) {
       ${m.branch ? `<dt>Branch</dt><dd class="mono">${esc(m.branch)}</dd>` : ""}
       ${m.spec ? `<dt>Spec</dt><dd>${fileLink(m.spec, "repoDir")}</dd>` : ""}
       ${m.archive ? `<dt>Ledger</dt><dd>${fileLink(m.archive)}</dd>` : ""}
-      ${stories.length ? `<dt>Slices</dt><dd>${stories.filter((s) => s.status === "done").length} of ${stories.length} done</dd>` : ""}
+      ${stories.length ? `<dt>Stories</dt><dd>${stories.filter((s) => s.status === "done").length} of ${stories.length} ${m.status === "done" ? "done" : "merged to branch"}</dd>` : ""}
       ${q ? `<dt>Quality gate</dt><dd>${q.findings} findings · ${q.fixed} fixed · ${q.skipped} skipped${q.note ? `<div class="muted">${esc(q.note)}</div>` : ""}</dd>` : ""}
     </dl></div>
     ${(m.covers || []).length ? `<div class="sec"><h3>Covers brief items</h3><div class="links">${m.covers.map((c) => `<span class="link-chip">${esc(c)}</span>`).join("")}</div></div>` : ""}
@@ -1265,6 +1388,10 @@ document.addEventListener("click", (ev) => {
   if (rl) { ev.stopPropagation(); release(rl.dataset.release); return; }
   const cp = ev.target.closest("[data-copy]");
   if (cp) { ev.stopPropagation(); copyPrompt(cp.dataset.copy, cp.dataset.id); return; }
+  const ex = !ev.target.closest("[data-settle]") && ev.target.closest("[data-expand]"); // the whole line toggles, not its buttons
+  if (ex) { ev.stopPropagation(); const i = Number(ex.dataset.expand); S.expanded ||= new Set(); S.expanded.has(i) ? S.expanded.delete(i) : S.expanded.add(i); render(); return; }
+  const st = ev.target.closest("[data-settle]");
+  if (st) { ev.stopPropagation(); settle(st.dataset.settle, st.dataset.id); return; }
   const a = ev.target.closest("[data-act]");
   if (a) { ev.stopPropagation(); if (!a.disabled) act(a.dataset.act, a.dataset.id); return; }
   const f = ev.target.closest("[data-filter]");
@@ -1302,6 +1429,10 @@ $("scrim").addEventListener("click", closeSheet);
 $("sheet-close").addEventListener("click", closeSheet);
 $("feed-toggle").addEventListener("click", () => $("feed").classList.toggle("on"));
 $("feed-close").addEventListener("click", () => $("feed").classList.remove("on"));
+$("feed-filter").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-feed]");
+  if (b) { S.feedFilter = b.dataset.feed; renderEvents(); $("events").scrollTop = 0; }
+});
 window.addEventListener("resize", () => { if (S.epic) renderMap(); });
 $("quality").addEventListener("toggle", () => (S.qualityTouched = true), { once: true });
 
@@ -1310,6 +1441,7 @@ $("favicon").href = "data:image/svg+xml," + encodeURIComponent($("logo").outerHT
 poll();
 setInterval(poll, POLL_MS);
 setInterval(() => { if (S.events.length) renderEvents(); }, 60000);
+setInterval(() => document.querySelectorAll("[data-since]").forEach((el) => (el.textContent = dur(Date.now() - Date.parse(el.dataset.since)))), 30000);
 </script>
 </body>
 </html>

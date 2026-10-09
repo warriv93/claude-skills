@@ -10,6 +10,8 @@ Everything here acts on the active milestone. A story is **ready** when it is `t
 | `REQUEST build-all` | set `buildAll: true`, dispatch every ready story |
 | `REQUEST stop` | set `buildAll: false`; running stories finish |
 | `REQUEST plan <id>` | append a `request` event saying `<id>` waits for the active milestone |
+| `REQUEST confirm <n>` | the user confirmed assumption `<n>` in the Podium: settle it as `confirmed` (SKILL.md, The human) |
+| `REQUEST reverse <n> [note=…]` | the user reversed it: settle it as `reversed` and do the rework, the note saying what they want instead |
 | `PROGRESS <id> … COMMITTED <sha>` | merge it (below) |
 | `PROGRESS <id> … FAILED <why>` | a failed attempt (below) |
 | `IDLE <id>`, or a subagent finished, without `COMMITTED` | a failed attempt, reason "stopped without committing" |

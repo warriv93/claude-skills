@@ -43,10 +43,13 @@ from urllib.parse import parse_qs, urlparse
 from podium import HOURS, availability, next_change, podium_dir  # one reading of the user's availability and files
 
 # Run files that are normal to lack early on: an empty answer instead of a 404 on every poll.
-EMPTY_WHEN_MISSING = {"handoffs.json": {}, "events.jsonl": ""}
+EMPTY_WHEN_MISSING = {"handoffs.json": {}, "events.jsonl": "", "requests.jsonl": ""}
 
 STORY_ID = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
-ACTIONS = {"assign", "plan", "build-all", "stop"}  # assign and plan take an id
+ACTIONS = {"assign", "plan", "build-all", "stop", "confirm", "reverse"}
+ID_ACTIONS = {"assign", "plan", "confirm", "reverse"}  # these take an id
+# The user settling an assumption: an answer, kept until an orchestrator runs, so it needs no watcher.
+SETTLE = {"confirm", "reverse"}
 
 
 def load_run(root):
@@ -72,6 +75,15 @@ def load_run(root):
 
 PAGE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "podium.html")
 PHASE_3 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "phase-3-build.md")
+def paseo_server():
+    """The local Paseo daemon's server id, which its agent deep links need, or None."""
+    try:
+        with open(os.path.expanduser("~/.paseo/server-id")) as f:
+            return f.read().strip() or None
+    except OSError:
+        return None
+
+
 SKILL = os.path.basename(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # the command this Podium belongs to
 
 
@@ -128,7 +140,7 @@ def make_handler(root):
 
         def do_GET(self):
             if self.path == "/info":
-                return self.reply(200, {"runDir": root, "repoDir": os.path.dirname(root), "watching": watching(root), "skill": SKILL})
+                return self.reply(200, {"runDir": root, "repoDir": os.path.dirname(root), "watching": watching(root), "skill": SKILL, "paseoServer": paseo_server()})
             if self.path.startswith("/prompt/"):
                 return self.prompt(*([p for p in self.path.split("/") if p][1:] + [None, None])[:2])
             if self.path == "/human":
@@ -164,22 +176,26 @@ def make_handler(root):
 
         def do_POST(self):
             url = urlparse(self.path)
-            if not url.path.startswith("/human/") and not watching(root):
+            first = ([p for p in url.path.split("/") if p] or [""])[0]
+            if not url.path.startswith("/human/") and first not in SETTLE and not watching(root):
                 return self.reply(409, {"error": "no orchestrator is watching"})
             if url.path.startswith("/handoff/"):
                 return self.handoff(url.path[len("/handoff/"):], take=True)
             if url.path.startswith("/human/"):
                 return self.toggle(url.path[len("/human/"):], parse_qs(url.query).get("until", [None])[0])
-            parts = [p for p in self.path.split("/") if p]
+            parts = [p for p in url.path.split("/") if p]
             action = parts[0] if parts else ""
             story = parts[1] if len(parts) > 1 else None
-            if action not in ACTIONS or (action in ("assign", "plan")) != (story is not None):
+            if action not in ACTIONS or (action in ID_ACTIONS) != (story is not None):
                 return self.reply(404, {"error": "unknown action"})
             if story is not None:
                 if not STORY_ID.match(story) or story not in self.known_ids(action):
                     return self.reply(404, {"error": "unknown id"})
             line = {"action": action, "story": story,
                     "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            note = (parse_qs(url.query).get("note", [""])[0] or "").strip()[:500]
+            if action in SETTLE and note:
+                line["note"] = note
             with open(os.path.join(podium_dir(root), "requests.jsonl"), "a") as f:
                 f.write(json.dumps(line) + "\n")
             self.reply(202, {"queued": line})
@@ -257,7 +273,15 @@ def make_handler(root):
             self.reply(200, availability(root, self.podium()))
 
         def known_ids(self, action):
-            """plan → milestone ids; assign → story ids of the active milestone."""
+            """plan → milestone ids; assign → story ids of the active milestone; confirm and
+            reverse → the indexes of the open assumptions."""
+            if action in SETTLE:
+                try:
+                    with open(os.path.join(podium_dir(root), "podium.json")) as f:
+                        assumed = json.load(f).get("assumptions") or []
+                except (OSError, ValueError):
+                    return set()
+                return {str(i) for i, a in enumerate(assumed) if a.get("status") == "open"}
             milestones, active = load_run(root)
             if action == "plan":
                 return {m.get("id") for m in milestones}

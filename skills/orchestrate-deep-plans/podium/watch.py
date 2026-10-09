@@ -3,7 +3,7 @@
 
 Prints one line per event the orchestrator must act on:
 
-    REQUEST <action> [<id>]         a Podium button (requests.jsonl)
+    REQUEST <action> [<id>] [note=…]  a Podium button (requests.jsonl); confirm/reverse <n> settle an assumption
     PROGRESS <story> <line>         a story agent's COMMITTED or FAILED line (stories/<milestone>/<story>.progress);
                                     the other stages only feed the Podium, so they stay out of the agent's context
     PERMISSION <story> <tool>       a Paseo agent waits for approval   (--paseo)
@@ -91,7 +91,8 @@ def main():
                         r = json.loads(line)
                     except ValueError:
                         continue
-                    emit(f"REQUEST {r.get('action')} {r.get('story') or ''}".rstrip())
+                    note = f" note={r['note']}" if r.get("note") else ""
+                    emit(f"REQUEST {r.get('action')} {r.get('story') or ''}".rstrip() + note)
                 elif line.split()[1:2] in (["COMMITTED"], ["FAILED"]):
                     emit(f"PROGRESS {os.path.basename(path)[:-len('.progress')]} {line}")
 

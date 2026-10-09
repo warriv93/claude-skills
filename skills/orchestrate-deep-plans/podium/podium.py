@@ -49,10 +49,11 @@ COMMANDS
         holding until the next change of hours). Change it through the Podium:
         its toggle, or `curl -s -X POST <podium>/human/<available|unavailable|auto>`
         (`?until=HH:MM` for another end).
-    assume <question> <choice> <why> [--story ID]
+    assume <question> <choice> <why> [--story ID] [--short TEXT]
         Record an assumption made while the user is unavailable: appends
-        {at, milestone, story, question, choice, why, status: open} to the
-        project's assumptions and an `assumed` event.
+        {at, milestone, story, question, choice, why, short, status: open} to the
+        project's assumptions and an `assumed` event. `short` is the decision in
+        a few words, the Podium's one-line summary (it falls back to the question).
     assumptions
         The open assumptions, numbered by their index in the list
         (settle one with `set . assumptions.<n>.status=confirmed|reversed`).
@@ -432,13 +433,15 @@ def cmd_human(p, _):
 
 
 def cmd_assume(p, args):
-    story = args[args.index("--story") + 1] if "--story" in args else None
-    rest = [a for a in args if a not in ("--story", story)]
+    opt = lambda flag: args[args.index(flag) + 1] if flag in args else None
+    story, short = opt("--story"), opt("--short")
+    flags = {i for f in ("--story", "--short") if f in args for i in (args.index(f), args.index(f) + 1)}
+    rest = [a for i, a in enumerate(args) if i not in flags]
     if len(rest) != 3:
-        sys.exit("assume <question> <choice> <why> [--story ID]")
+        sys.exit("assume <question> <choice> <why> [--story ID] [--short TEXT]")
     question, choice, why = rest
     mid = (p.data.get("active") or {}).get("milestone")
-    a = {"at": NOW(), "milestone": mid, "story": story, "question": question, "choice": choice, "why": why, "status": "open"}
+    a = {"at": NOW(), "milestone": mid, "story": story, "question": question, "choice": choice, "why": why, "short": short, "status": "open"}
     p.data.setdefault("assumptions", []).append({k: v for k, v in a.items() if v is not None})
     p.event("assumed", mid, story, question=question, choice=choice)
     p.save()

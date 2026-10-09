@@ -19,6 +19,7 @@ The skills in `claude-skills` are written for Claude Code. Run them as written, 
 | `AskUserQuestion` | one message with every question, each with a recommended default |
 | `/clear` (asked of the user) | ask the user to start a new conversation and re-invoke the skill; it resumes from the ledger |
 | `/run` | start the app with `run_command` and drive it with the browser |
+| Playwright MCP tools (`browser_navigate`, `browser_take_screenshot`, …) | the browser tools; save each screenshot to the path the skill names |
 | `/security-review`, `code-review` | activate if installed; otherwise run the review inline against the same diff |
 | `Monitor` on a watcher script | start it with `run_command` in the background; read its new output at the start of each turn |
 | `Agent` with `isolation: "worktree"`, `run_in_background` | `git worktree add -b <branch> ../<slug> <base>`, then a subagent working in that folder |

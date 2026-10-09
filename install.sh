@@ -15,6 +15,15 @@ link_all() { # <target dir> <source dir>...
   for src in "$@"; do
     for d in "$src"/*/; do
       name="$(basename "$d")"
+      # A same-named skill installed from elsewhere (e.g. a work-specific create-pr) wins.
+      if [ -e "$target/$name" ] || [ -L "$target/$name" ]; then
+        current="$(readlink "$target/$name" || true)"
+        if [ "$current" != "${d%/}" ]; then
+          what="a folder"; [ -n "$current" ] && what="a link to $current"
+          echo "kept $target/$name (already $what)"
+          continue
+        fi
+      fi
       ln -sfn "${d%/}" "$target/$name"
       echo "linked $name -> $target/$name"
     done

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""orchestrate-plan dashboard server.
+"""orchestrate-plan Podium server.
 
-Serves `dashboard.html` (next to this file) plus the run directory (default
+Serves `podium.html` (next to this file) plus the run directory (default
 `.deep-plan/`) on 127.0.0.1, and turns the
-dashboard's buttons into lines in `requests.jsonl`, which the orchestrator
+Podium's buttons into lines in `requests.jsonl`, which the orchestrator
 watches. The browser only ever sends an action and a story id; prompts are
 built by the orchestrator from the story brief.
 
@@ -19,10 +19,10 @@ from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 STORY_ID = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
-ACTIONS = {"assign", "build-all", "stop"}
+ACTIONS = {"assign", "plan", "build-all", "stop"}  # assign and plan take an id
 
 
-PAGE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard.html")
+PAGE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "podium.html")
 
 
 def make_handler(root):
@@ -40,7 +40,7 @@ def make_handler(root):
         def do_GET(self):
             if self.path == "/info":
                 return self.reply(200, {"runDir": root, "repoDir": os.path.dirname(root)})
-            if self.path.split("?")[0] in ("/", "/index.html", "/dashboard.html"):
+            if self.path.split("?")[0] in ("/", "/index.html", "/podium.html"):
                 with open(PAGE, "rb") as f:
                     data = f.read()
                 self.send_response(200)
@@ -55,23 +55,29 @@ def make_handler(root):
             parts = [p for p in self.path.split("/") if p]
             action = parts[0] if parts else ""
             story = parts[1] if len(parts) > 1 else None
-            if action not in ACTIONS or (action == "assign") != (story is not None):
+            if action not in ACTIONS or (action in ("assign", "plan")) != (story is not None):
                 return self.reply(404, {"error": "unknown action"})
             if story is not None:
-                if not STORY_ID.match(story) or story not in self.story_ids():
-                    return self.reply(404, {"error": "unknown story"})
+                if not STORY_ID.match(story) or story not in self.known_ids(action):
+                    return self.reply(404, {"error": "unknown id"})
             line = {"action": action, "story": story,
                     "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
             with open(os.path.join(root, "requests.jsonl"), "a") as f:
                 f.write(json.dumps(line) + "\n")
             self.reply(202, {"queued": line})
 
-        def story_ids(self):
+        def known_ids(self, action):
+            """plan → milestone ids; assign → story ids of the active milestone."""
             try:
                 with open(os.path.join(root, "epic.json")) as f:
-                    return {s["id"] for s in json.load(f).get("stories", [])}
-            except (OSError, ValueError, KeyError):
+                    epic = json.load(f)
+            except (OSError, ValueError):
                 return set()
+            milestones = epic.get("milestones") or [{"id": epic.get("epic", {}).get("id"), "stories": epic.get("stories", [])}]
+            if action == "plan":
+                return {m.get("id") for m in milestones}
+            active = next((m for m in milestones if m.get("id") == epic.get("active")), milestones[0])
+            return {s.get("id") for s in active.get("stories", [])}
 
         def reply(self, code, body):
             data = json.dumps(body).encode()

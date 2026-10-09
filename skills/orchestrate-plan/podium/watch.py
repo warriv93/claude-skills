@@ -3,8 +3,8 @@
 
 Prints one line per event the orchestrator must act on:
 
-    REQUEST <action> [<story>]      a dashboard button (requests.jsonl)
-    PROGRESS <story> <line>         a story agent's progress line
+    REQUEST <action> [<id>]         a Podium button (requests.jsonl)
+    PROGRESS <story> <line>         a story agent's progress line (stories/<milestone>/<story>.progress)
     PERMISSION <story> <tool>       a Paseo agent waits for approval   (--paseo)
     PERMISSION-CLEARED <story>      that approval was answered          (--paseo)
     IDLE <story>                    a working story's Paseo agent went idle (--paseo)
@@ -39,14 +39,18 @@ def main():
     root = os.path.abspath(args.dir)
 
     offsets = {}
-    for path in [os.path.join(root, "requests.jsonl"), *glob.glob(os.path.join(root, "stories", "*.progress"))]:
+    def watched():
+        return [os.path.join(root, "requests.jsonl"), *glob.glob(os.path.join(root, "stories", "*", "*.progress"))]
+
+    for path in watched():
+        if not os.path.exists(path):
+            continue
         offsets[path] = os.path.getsize(path)  # start at the end: only new lines are events
 
     waiting, idle = set(), set()
     last_paseo = 0.0
     while True:
-        paths = [os.path.join(root, "requests.jsonl"), *glob.glob(os.path.join(root, "stories", "*.progress"))]
-        for path in paths:
+        for path in watched():
             if not os.path.exists(path):
                 continue
             with open(path) as f:
@@ -69,7 +73,9 @@ def main():
             last_paseo = time.time()
             try:
                 with open(os.path.join(root, "epic.json")) as f:
-                    stories = json.load(f).get("stories", [])
+                    epic = json.load(f)
+                active = next((m for m in epic.get("milestones", []) if m.get("id") == epic.get("active")), None)
+                stories = active.get("stories", []) if active else epic.get("stories", [])
             except (OSError, ValueError):
                 stories = []
             by_agent = {s["agent"]["id"]: s for s in stories if s.get("agent", {}).get("backend") == "paseo"}

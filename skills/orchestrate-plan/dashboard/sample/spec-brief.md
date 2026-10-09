@@ -1,3 +1,0 @@
-# Spec brief
-
-Signed off.

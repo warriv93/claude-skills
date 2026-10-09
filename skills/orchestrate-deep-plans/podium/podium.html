@@ -63,7 +63,7 @@ code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:
   background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--line);
 }
-.topbar-inner { max-width: 1480px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+.topbar-inner { margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
 .logo { width: 34px; height: 34px; flex: none; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
 .brand { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .brand .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
@@ -85,7 +85,7 @@ code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:
 @media (max-width: 720px) { .human .until, .human .flip { display: none; } }
 .icon-btn { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 13px; display: none; }
 
-.page { max-width: 1480px; margin: 0 auto; padding: 20px 24px 48px; display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 20px; align-items: start; }
+.page { margin: 0 auto; padding: 20px 24px 48px; display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 20px; align-items: start; }
 .main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--line); }
 
@@ -147,8 +147,21 @@ a.wchip { color: inherit; text-decoration: none; }
 
 /* ---------- map ---------- */
 .map-card { padding: 0; overflow: hidden; }
-.map-head { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 18px 0; }
-.map-head h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-2); letter-spacing: .02em; text-transform: uppercase; }
+.map-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 14px 18px 0; }
+.map-head h2 { flex: 1; min-width: 0; }
+.map-head .legend { flex: none; white-space: nowrap; }
+.map-head h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.map-head h2 .kind { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-right: 5px; }
+.map-head h2 .here { color: var(--text-2); }
+.page-title { padding: 10px 18px 2px; }
+.mockbtn { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; padding: 2px 10px 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); font-size: 12px; font-weight: 600; line-height: 18px; letter-spacing: 0; text-transform: none; text-decoration: none; white-space: nowrap; vertical-align: middle; flex: none; }
+.mockbtn span { font-size: 13px; }
+.mockbtn:hover { background: var(--accent); color: #fff; }
+.page-title h1 .mockbtn { margin-left: 12px; font-size: 13px; padding: 3px 12px 3px 8px; }
+.page-title .back { display: inline-flex; margin: 0 10px 0 0; vertical-align: middle; }
+.page-title .kind-chip { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 2px 8px; }
+.page-title h1 { margin: 8px 0 4px; font-size: 24px; font-weight: 700; letter-spacing: -.015em; color: var(--text); }
+.page-title .sub { font-size: 13px; color: var(--text-2); }
 .legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-3); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend svg { overflow: visible; }
@@ -175,7 +188,7 @@ a.wchip { color: inherit; text-decoration: none; }
 .node.done .title { color: var(--text-2); }
 .node.blocked { opacity: .62; }
 .node.working { border-color: rgba(52,199,89,.45); }
-.node.approval { border-color: rgba(255,159,10,.55); }
+.node.approval, .node.waits { border-color: rgba(255,159,10,.55); }
 .node.failed { border-color: rgba(255,59,48,.45); }
 .node .top { display: flex; align-items: center; gap: 8px; }
 .sid { font-size: 11px; font-weight: 700; color: var(--text-2); background: var(--gray-soft); border-radius: 6px; padding: 1px 6px; letter-spacing: .02em; }
@@ -185,6 +198,7 @@ a.wchip { color: inherit; text-decoration: none; }
 .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
 .badge.done { background: var(--gray-soft); color: var(--text-2); }
 .badge.working { color: var(--green); padding-left: 2px; }
+.badge.needs { color: var(--amber); padding-left: 2px; }
 .badge.approval { background: var(--amber-soft); color: var(--amber); }
 .badge.failed { background: var(--red-soft); color: var(--red); }
 .badge.blocked, .badge.waiting { color: var(--text-3); padding-left: 0; font-weight: 500; }
@@ -278,6 +292,7 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
 .md { font-size: 14px; }
 .md h1, .md h2, .md h3 { font-size: 14.5px; margin: 14px 0 6px; letter-spacing: -.01em; }
 .md h1:first-child, .md h2:first-child, .md h3:first-child { margin-top: 0; }
+.hicon { margin-right: 6px; font-style: normal; text-transform: none; }
 .md p { margin: 6px 0; }
 .md ul, .md ol { margin: 6px 0; padding-left: 20px; }
 .md li { margin: 3px 0; }
@@ -303,6 +318,7 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
 .ecard { background: var(--card-2); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); transition: transform .18s ease, box-shadow .18s ease, opacity .2s; }
 .ecard:hover { transform: translateY(-2px); box-shadow: var(--shadow-hi); }
 .ecard.working { border-color: rgba(52,199,89,.45); }
+.ecard.waits { border-color: rgba(255,159,10,.55); }
 .ecard.dim { opacity: .28; }
 .ecard .top { display: flex; align-items: center; gap: 8px; }
 .ecard .top .when { margin-left: auto; }
@@ -327,6 +343,9 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
 .node.dropped .title { text-decoration: line-through; color: var(--text-3); }
 .node.ms[data-drill] .model { color: var(--accent); }
 .node .foot .when { margin-left: auto; }
+.prlink { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
+.prlink:hover { text-decoration: underline; }
+.doing-inline { margin-left: 8px; font-size: 12px; color: var(--text-2); }
 .sheet .commit .sid { justify-self: start; }
 .sheet .commit a[data-drill], .sheet .commit a[data-open] { color: var(--accent); cursor: pointer; }
 
@@ -384,6 +403,7 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
           <span><svg width="26" height="2"><line x1="0" y1="1" x2="26" y2="1" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 5"/></svg>shares files</span>
         </div>
       </div>
+      <div class="page-title" id="page-title"></div>
       <div class="map-scroll"><div class="map" id="map"></div></div>
     </section>
     <details class="card quality" id="quality">
@@ -417,7 +437,7 @@ const UNSTARTED = ["draft", "parked", "later"];
 const POLL_MS = 2000;
 const W = 236, H = 140, EPIC_W = 380, EPIC_H = 132, GX = 22, GY = 64, PAD = 56;
 
-const S = { handoffs: {}, human: null, info: null, project: null, epicView: undefined, epic: null, raw: "", events: [], eventsRaw: "", progress: {}, briefs: {}, selected: null, view: undefined, query: "", filter: "all", online: true };
+const S = { base: "podium/", handoffs: {}, human: null, info: null, project: null, epicView: undefined, epic: null, raw: "", events: [], eventsRaw: "", progress: {}, briefs: {}, selected: null, view: undefined, query: "", filter: "all", online: true };
 const $ = (id) => document.getElementById(id);
 /* appearance: "system" (default) follows the OS; the choice is a per-viewer convenience in localStorage */
 function setTheme(t) {
@@ -485,7 +505,14 @@ function setEpic(id, view) {
 async function poll() {
   try {
     let raw;
-    try { raw = await getText("podium.json"); } catch { raw = await getText("epic.json"); }
+    /* the orchestrator's files sit in the run dir's podium/ folder; an older run keeps them at the top */
+    raw = null;
+    /* probe once, then keep reading where it was found: a miss would 404 on every poll */
+    const where = [["podium/", "podium.json"], ["", "podium.json"], ["", "epic.json"]];
+    for (const [base, name] of S.found ? [S.found, ...where.filter((w) => w !== S.found)] : where) {
+      try { raw = await getText(base + name); S.base = base; S.found = [base, name]; break; } catch { /* next */ }
+    }
+    if (raw === null) throw new Error("no podium.json");
     S.online = true;
     let changed = raw !== S.raw;
     if (changed) {
@@ -496,11 +523,11 @@ async function poll() {
       chooseView();
     }
     try {
-      const ev = await getText("events.jsonl");
+      const ev = await getText(S.base + "events.jsonl");
       if (ev !== S.eventsRaw) { S.eventsRaw = ev; S.events = parseJsonl(ev); renderEvents(); }
     } catch { /* no events yet */ }
     try {
-      const h = await getText("handoffs.json");
+      const h = await getText(S.base + "handoffs.json");
       if (h !== S.handoffsRaw) { S.handoffsRaw = h; S.handoffs = JSON.parse(h); changed = true; }
     } catch { if (S.handoffsRaw) { S.handoffsRaw = ""; S.handoffs = {}; changed = true; } }
     const actx = S.project.active ? epicCtx(S.project.active.epic) : null;
@@ -531,7 +558,7 @@ function parseJsonl(text) {
   return text.split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
 }
 const key = (ms, id) => `${ms}/${id}`;
-const progressPath = (ms, id) => `stories/${ms}/${id}.progress`;
+const progressPath = (ms, id) => `${S.base}stories/${ms}/${id}.progress`;
 function progressLines(ms, id) {
   return (S.progress[key(ms, id)] || "").split("\n").filter(Boolean).map((l) => {
     const m = l.match(/^(\S+)\s+(\S+)\s*(.*)$/);
@@ -648,10 +675,10 @@ function renderProject() {
   if (!actx) {
     $("stepper").hidden = true;
     const landed = P.epics.reduce((n, E) => n + (E.milestones || []).filter((m) => m.status === "done").length, 0);
-    $("banner").innerHTML = prBanner() + assumedBanner() + `<div class="banner idle"><span class="label">Idle</span><span class="sub">${P.epics.length} epics · ${landed} milestones landed · open an epic to plan its next milestone</span></div>`;
+    $("banner").innerHTML = needsBanner() + assumedBanner() + `<div class="banner idle"><span class="label">Idle</span><span class="sub">${P.epics.length} epics · ${landed} milestones landed · open an epic to plan its next milestone</span></div>`;
   }
   $("q").placeholder = "Search epics and milestones";
-  $("map-title").textContent = "Epics";
+  setHeading([["", "All epics", null]], "Project", esc(P.project.title), `${P.epics.length} epics · each is a product brief or a theme; open one to see its milestones`);
   $("quality").hidden = true;
   const m = $("map");
   m.style.width = ""; m.style.height = ""; m.style.zoom = 1;
@@ -666,15 +693,39 @@ function lastActivity(E) {
     S.events.filter((ev) => (E.milestones || []).some((m) => m.id === ev.milestone)).map((ev) => (ev.at || "").slice(0, 10))
   ).sort().pop() || "";
 }
+/* a milestone's PRs: its own and, across repos, each repo's */
+function msPrs(m) {
+  return [m.pr, ...Object.entries(m.repos || {}).map(([repo, r]) => r?.pr && { ...r.pr, repo })].filter(Boolean);
+}
+const PR_WORD = { draft: "Draft PR", open: "PR open", merged: "PR merged", closed: "PR closed" };
+const prLink = (pr) => `<a class="prlink" href="${esc(pr.url)}" target="_blank" rel="noopener">${PR_WORD[pr.state] || "PR"}${pr.repo ? ` ${esc(pr.repo)}` : ""} #${esc(pr.number)} ↗</a>`;
+/* what a working milestone is doing now: its open PRs, else the stories being built, else its phase */
+function msDoing(m) {
+  const prs = msPrs(m).filter((pr) => pr.state !== "closed");
+  if (prs.length) return prs.map(prLink).join(" ");
+  const w = (m.stories || []).filter((s) => ["working", "approval"].includes(s.status)).map((s) => s.id);
+  return w.length ? `Building ${esc(w.join(", "))}` : esc(phaseLabel(m.phase));
+}
+/* a working milestone that waits on the user: needsYou is set on it, or it has an open/draft PR, and no story is being built or approved */
+function msWaits(m) {
+  if (m.status !== "working" || (m.stories || []).some((s) => ["working", "approval"].includes(s.status))) return false;
+  const pr = msPrs(m).some((p) => ["draft", "open"].includes(p.state));
+  return pr || (!!S.project.needsYou && S.project.active?.milestone === m.id);
+}
+/* a story is complete only once its milestone has landed; before that it is merged into the milestone branch */
+const storyDone = (m) => (m.status === "done" ? "Completed" : "Merged to branch");
+
 function epicCard({ E, last, on }) {
   const ms = (E.milestones || []).filter((m) => m.status !== "dropped");
   const done = ms.filter((m) => m.status === "done").length;
   const stories = ms.reduce((n, m) => n + (m.stories || []).length, 0);
   const st = on ? "working" : ms.length && done === ms.length ? "done" : "planned";
-  const badge = { working: `<span class="pulse"></span><span class="badge working">Working on ${esc(S.project.active?.milestone)}</span>`,
+  const am = on && ms.find((m) => m.id === S.project.active?.milestone);
+  const wt = !!am && msWaits(am);
+  const badge = { working: (wt ? `<span class="pulse amber"></span><span class="badge needs">Waiting on you · ${esc(S.project.active?.milestone)}</span>` : `<span class="pulse"></span><span class="badge working">Working on ${esc(S.project.active?.milestone)}</span>`) + (am ? `<span class="doing-inline">${msDoing(am)}</span>` : ""),
     done: `<span class="badge done">Completed</span>`, planned: `<span class="badge draft">Up next</span>` }[st];
-  return `<div class="ecard ${st}" data-epic="${esc(E.id)}" tabindex="0">
-    <div class="top">${badge}<span class="when">${esc(last)}</span></div>
+  return `<div class="ecard ${wt ? "waits" : st}" data-epic="${esc(E.id)}" tabindex="0">
+    <div class="top">${badge}${mockBtn(E)}<span class="when">${esc(last)}</span></div>
     <h3>${esc(E.title)}</h3><p>${esc(E.summary || "")}</p>
     <div class="epic-row">${ring(ms.length ? done / ms.length : 0)}<div class="epic-stat"><b>${done}</b> of ${ms.length} milestones landed<br>${stories} stories</div></div></div>`;
 }
@@ -702,11 +753,7 @@ function renderBanner() {
   let html;
   const allDone = ms.every((m) => ["done", "dropped"].includes(m.status));
   if (e.needsYou) {
-    const n = e.needsYou;
-    const s = stories.find((x) => x.id === n.story);
-    const link = n.story ? `<span class="wchip" data-open="${esc(n.story)}" data-ms="${esc(am?.id || "")}"><b>${esc(n.story)}</b> ${esc(s?.title || "")}</span>` : "";
-    html = `<div class="banner needs"><span class="label"><span class="pulse amber"></span>Needs you</span><span class="sub">${esc(n.reason)}</span><div class="chips">${link}</div></div>`;
-    if (working.length) html += workingBanner(am, working);
+    html = working.length ? workingBanner(am, working) : ""; // what it needs is in the top banner
   } else if (working.length) {
     html = workingBanner(am, working);
   } else if (allDone) {
@@ -720,7 +767,7 @@ function renderBanner() {
     const next = ms.filter((m) => [...UNSTARTED, "todo"].includes(m.status));
     html = `<div class="banner idle"><span class="label">Idle</span><span class="sub">${ms.filter((m) => m.status === "done").length} milestones landed · next: pick one to plan</span><div class="chips">${next.map((m) => `<span class="wchip" data-open="${esc(m.id)}" data-ms=""><b>${esc(m.id)}</b> ${esc(m.title)} <span class="cycle">· ${esc(m.status)}</span></span>`).join("")}</div></div>`;
   }
-  $("banner").innerHTML = prBanner() + assumedBanner() + html;
+  $("banner").innerHTML = needsBanner() + assumedBanner() + html;
 }
 /* every draft PR in the project: the orchestrator opens PRs as drafts, and marking one ready is the user's call */
 function draftPrs() {
@@ -728,11 +775,17 @@ function draftPrs() {
     [m.pr, ...Object.entries(m.repos || {}).map(([repo, r]) => r?.pr && { ...r.pr, repo })]
       .filter((pr) => pr?.state === "draft").map((pr) => ({ ...pr, ms: m.id }))));
 }
-function prBanner() {
-  const prs = draftPrs();
-  if (!prs.length) return "";
-  const chips = prs.map((pr) => `<a class="wchip" href="${esc(pr.url)}" target="_blank" rel="noopener"><b>${esc(pr.ms)}</b>${pr.repo ? ` ${esc(pr.repo)}` : ""} #${esc(pr.number)} <span class="cycle">· draft ↗</span></a>`).join("");
-  return `<div class="banner needs"><span class="label"><span class="pulse amber"></span>Needs you · ${prs.length === 1 ? "a draft PR" : `${prs.length} draft PRs`}</span><span class="sub">Review it, then mark it ready or ask for changes</span><div class="chips">${chips}</div></div>`;
+/* one "Needs you" banner: the orchestrator's ask, the draft PRs to review, and a way into each milestone's map */
+function needsBanner() {
+  const prs = draftPrs(), n = S.project.needsYou;
+  if (!prs.length && !n) return "";
+  const am = S.project.active?.milestone;
+  const ids = [...new Set([...prs.map((pr) => pr.ms), ...(n && am ? [am] : [])])];
+  const story = n?.story && am ? `<span class="wchip" data-open="${esc(n.story)}" data-ms="${esc(am)}"><b>${esc(n.story)}</b> open story ›</span>` : "";
+  const chips = prs.map((pr) => `<a class="wchip" href="${esc(pr.url)}" target="_blank" rel="noopener"><b>${esc(pr.ms)}</b>${pr.repo ? ` ${esc(pr.repo)}` : ""} #${esc(pr.number)} <span class="cycle">· draft ↗</span></a>`).join("")
+    + story + ids.map((id) => `<span class="wchip" data-drill="${esc(id)}"><b>${esc(id)}</b> go to milestone in map ›</span>`).join("");
+  const what = prs.length ? ` · ${prs.length === 1 ? "a draft PR" : `${prs.length} draft PRs`}` : "";
+  return `<div class="banner needs"><span class="label"><span class="pulse amber"></span>Needs you${what}</span><span class="sub">${n ? esc(n.reason) : "Review it, then mark it ready or ask for changes"}</span><div class="chips">${chips}</div></div>`;
 }
 /* the topbar toggle: the user's availability, from their hours or the toggle until the next change of hours */
 function renderHuman() {
@@ -771,6 +824,30 @@ function renderFilters() {
   $("q").placeholder = viewMs() ? "Search stories, files, ids" : "Search milestones, brief items, ids";
 }
 
+/* a milestone's or epic's UI mock: its \`mock\` ({path, url}) or a planning artifact named a mock. A path is
+   relative to the run dir, which this server hosts; "../" reaches the repo, hosted under /repo/. The url is a
+   published copy (a claude.ai artifact), used when there is no local file. */
+function mockOf(x) {
+  const a = (x?.artifacts || []).find((a) => a.phase === "mock" || /mock/i.test(a.name || ""));
+  const m = x?.mock || (a && { path: a.path });
+  if (!m || !(m.path || m.url)) return null;
+  const href = m.path ? (m.path.startsWith("../") ? `/repo/${m.path.replace(/^(\.\.\/)+/, "")}` : `/${m.path.replace(/^\.?\//, "")}`) : m.url;
+  return { href, url: m.path ? m.url : null };
+}
+const mockBtn = (x) => ((m) => (m ? `<a class="mockbtn" href="${esc(m.href)}" target="_blank" rel="noopener" title="Open the UI mock in a new tab"><span>🎨</span>Mock</a>` : ""))(mockOf(x));
+
+/* where you are: a breadcrumb naming each level's kind, then the page's own title */
+function setHeading(trail, kind, title, sub) {
+  $("map-title").innerHTML = trail.map(([k, label, attr]) => {
+    const body = `${k ? `<span class="kind">${k}</span>` : ""}${label}`;
+    return attr ? `<a ${attr}>${body}</a>` : `<span class="here">${body}</span>`;
+  }).join(`<span class="crumb">›</span>`);
+  const up = [...trail].reverse().find(([, , attr]) => attr); // the nearest level above this one
+  // name the list you land on: an epic's page lists its milestones
+  const back = up ? `<button class="btn ghost back" ${up[2]}>‹ Back to ${up[0] === "Epic" ? "milestones" : up[1].toLowerCase()}</button>` : "";
+  $("page-title").innerHTML = `${back}<span class="kind-chip">${kind}</span><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ""}`;
+}
+
 function renderMap() {
   const e = S.epic, vm = viewMs();
   const stories = vm?.stories || [];
@@ -778,10 +855,16 @@ function renderMap() {
   if (!vm) { list = e.milestones; kind = "milestone"; }
   else if (stories.length) { list = stories; kind = "story"; }
   else { list = (vm.artifacts || []).map((a, i) => ({ id: `A${i + 1}`, title: a.name, summary: a.path, artifact: a })); kind = "artifact"; }
-  const pre = S.project.epics.length > 1 ? `<a data-epics>Epics</a><span class="crumb">›</span>` : "";
-  $("map-title").innerHTML = pre + (!vm ? (pre ? esc(e.epic.title) : "Milestones")
-    : e.single ? (pre ? esc(e.epic.title) : kind === "artifact" ? "Planning artifacts" : "Topology")
-    : `<a data-up>${esc(e.epic.title)}</a><span class="crumb">›</span>${esc(vm.id)} ${esc(vm.title)}`);
+  const all = S.project.epics.length > 1 ? [["", "All epics", "data-epics"]] : [];
+  const ms = e.milestones.filter((m) => m.status !== "dropped"), landed = ms.filter((m) => m.status === "done").length;
+  const epicCrumb = (link) => ["Epic", esc(e.epic.title), link ? "data-up" : null];
+  const storyHint = "each box is a story; lines show what it depends on";
+  if (!vm) setHeading([...all, epicCrumb(false)], "Epic", esc(e.epic.title), `${ms.length} milestones · ${landed} landed · open a milestone to see its stories`);
+  else if (e.single) setHeading([...all, epicCrumb(false)], "Epic", esc(e.epic.title), kind === "artifact" ? "Planning artifacts so far" : `${stories.length} stories · ${storyHint}`);
+  else setHeading([...all, epicCrumb(true), ["Milestone", `${esc(vm.id)} · ${esc(vm.title)}`, null]], `Milestone ${esc(vm.id)}`, esc(vm.title),
+    kind === "artifact" ? `${esc(phaseLabel(vm.phase))} · its planning documents so far`
+      : `${stories.length} stories · ${vm.status === "done" ? `landed${vm.shippedAt ? ` ${esc(vm.shippedAt)}` : ""}` : `${msWaits(vm) ? "Waiting on you · " : ""}${msDoing(vm)}`} · ${storyHint}`);
+  $("page-title").querySelector("h1")?.insertAdjacentHTML("beforeend", (vm && mockBtn(vm)) || mockBtn(e.epic));
   const L = layout(list);
   const map = Object.fromEntries(list.map((s) => [s.id, s]));
   const edges = [];
@@ -836,7 +919,7 @@ function milestoneRoot(p, m) {
       : `<button class="btn big" data-act="build-all" ${stories.some((s) => s.status !== "done") ? "" : "disabled"}>Build all</button>`;
   }
   const stat = stories.length
-    ? `<div class="epic-stat"><b>${done}</b> of ${stories.length} stories done<br>${m.status === "done" ? `Landed${m.shippedAt ? ` ${esc(m.shippedAt)}` : ""}` : S.epic.buildAll ? "Building wave by wave" : "Assign stories or build all"}</div>`
+    ? `<div class="epic-stat"><b>${done}</b> of ${stories.length} stories ${m.status === "done" ? "done" : "merged to branch"}<br>${m.status === "done" ? `Landed${m.shippedAt ? ` ${esc(m.shippedAt)}` : ""}` : done === stories.length ? msDoing(m) : S.epic.buildAll ? "Building wave by wave" : "Assign stories or build all"}</div>`
     : `<div class="epic-stat">Breakdown pending<br>${esc(phaseLabel(m.phase))} in progress</div>`;
   return rootBox(p, S.epic.single ? "Epic" : `Milestone · ${esc(m.id)}`, S.epic.single ? S.epic.epic.title : m.title, `${ring(stories.length ? done / stories.length : 0)}${stat}${btn}`);
 }
@@ -847,13 +930,13 @@ function milestoneNode(m, p, map) {
   const done = stories.filter((s) => s.status === "done").length;
   let foot = "";
   if (st === "done") foot = `<span class="badge done">Completed</span>${m.shippedAt ? `<span class="when">${esc(m.shippedAt)}</span>` : ""}`;
-  else if (st === "working") foot = `<span class="pulse"></span><span class="badge working">Working on</span><span class="when">${esc(phaseLabel(m.phase))}</span>`;
+  else if (st === "working") foot = msWaits(m) ? `<span class="pulse amber"></span><span class="badge needs">Waiting on you</span><span class="when">${msDoing(m)}</span>` : `<span class="pulse"></span><span class="badge working">Working on</span><span class="when">${msDoing(m)}</span>`;
   else if (UNSTARTED.includes(st)) foot = `<span class="badge ${st}">${{ draft: "Draft", parked: "Parked", later: "Later" }[st]}</span><button class="btn" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}`;
   else if (st === "dropped") foot = `<span class="badge dropped">Dropped</span>`;
   else if (st === "ready") foot = `<span class="badge ready">Ready</span><button class="btn" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}`;
   else foot = `<span class="badge waiting">Waiting on ${esc((m.deps || []).filter((d) => map[d]?.status !== "done").join(", "))}</span>`;
-  return `<div class="node ms ${st} ${S.selected === m.id ? "sel" : ""}" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" ${stories.length ? `data-drill="${esc(m.id)}"` : `data-open="${esc(m.id)}"`} data-id="${esc(m.id)}" tabindex="0">
-    <div class="top"><span class="sid">${esc(m.id)}</span><span class="model">${stories.length ? `${done}/${stories.length} slices ›` : ""}</span></div>
+  return `<div class="node ms ${st === "working" && msWaits(m) ? "waits" : st} ${S.selected === m.id ? "sel" : ""}" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" ${stories.length ? `data-drill="${esc(m.id)}"` : `data-open="${esc(m.id)}"`} data-id="${esc(m.id)}" tabindex="0">
+    <div class="top"><span class="sid">${esc(m.id)}</span>${mockBtn(m)}<span class="model">${stories.length ? `${done}/${stories.length} slices ›` : ""}</span></div>
     <span class="title">${esc(m.title)}</span>
     <div class="foot">${foot}</div></div>`;
 }
@@ -869,7 +952,7 @@ function storyNode(s, p, map) {
   const vm = viewMs(), live = vm.id === S.epic.active && vm.status === "working";
   const st = viewStatus(s, map);
   let foot = "";
-  if (st === "done") foot = `<span class="badge done">Completed</span>${s.commits?.[0] ? `<span class="when mono">${esc(s.commits[0].sha.slice(0, 7))}</span>` : ""}`;
+  if (st === "done") foot = `<span class="badge done">${storyDone(vm)}</span>${s.commits?.[0] ? `<span class="when mono">${esc(s.commits[0].sha.slice(0, 7))}</span>` : ""}`;
   else if (st === "working") foot = `<span class="pulse"></span><span class="badge working">Working on</span>`;
   else if (st === "approval") foot = `<span class="pulse amber"></span><span class="badge approval">Waiting for approval</span>`;
   else if (st === "elsewhere") foot = `<span class="badge elsewhere">In another session</span>${releaseBtn(s.id)}`;
@@ -1018,7 +1101,7 @@ function renderSheet() {
   const live = vm.id === e.active && vm.status === "working";
   const st = viewStatus(s, map);
   const blocks = items().filter((x) => (x.deps || []).includes(id));
-  const label = { done: "Completed", working: "Working on", elsewhere: "In another session", approval: "Waiting for approval", failed: "Failed", blocked: "Blocked", ready: "Ready", waiting: "Waiting on dependencies", dropped: "Dropped" }[st];
+  const label = { done: storyDone(vm), working: "Working on", elsewhere: "In another session", approval: "Waiting for approval", failed: "Failed", blocked: "Blocked", ready: "Ready", waiting: "Waiting on dependencies", dropped: "Dropped" }[st];
   const action = st === "ready" && live ? `<button class="btn big" data-act="assign" data-id="${esc(id)}">Assign subagent</button>${copyBtn("assign", id)}`
     : st === "elsewhere" ? `<button class="btn big ghost" data-release="${esc(id)}">✕ Take it back</button>${copyBtn("assign", id)}` : "";
   const log = progressLines(vm.id, id);
@@ -1040,18 +1123,20 @@ function renderSheet() {
 function milestoneSheet(m) {
   const map = msById(), st = viewStatus(m, map);
   const stories = m.stories || [];
-  const label = { done: "Completed", working: "Working on", ready: "Ready", waiting: "Waiting on dependencies", draft: "Draft", parked: "Parked", later: "Later", dropped: "Dropped" }[st] || st;
+  const wt = st === "working" && msWaits(m), bst = wt ? "needs" : st;
+  const label = wt ? "Waiting on you" : { done: "Completed", working: "Working on", ready: "Ready", waiting: "Waiting on dependencies", draft: "Draft", parked: "Parked", later: "Later", dropped: "Dropped" }[st] || st;
   const blocks = S.epic.milestones.filter((x) => (x.deps || []).includes(m.id));
   const actions = [
     stories.length && S.view !== m.id && !S.epic.single ? `<button class="btn big" data-drill="${esc(m.id)}">Open slice map ›</button>` : "",
     [...UNSTARTED, "ready"].includes(st) ? `<button class="btn big ${stories.length ? "ghost" : ""}" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}` : "",
   ].join(" ");
   const q = m.quality?.gate;
-  $("sheet-head").innerHTML = `<div class="top" style="display:flex;gap:8px;align-items:center"><span class="sid">${esc(m.id)}</span>${st === "working" ? `<span class="pulse"></span>` : ""}<span class="badge ${st}">${label}</span></div><h2>${esc(m.title)}</h2><div class="muted">${esc(m.summary || "")}</div>${actions.trim() ? `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">${actions}</div>` : ""}`;
+  $("sheet-head").innerHTML = `<div class="top" style="display:flex;gap:8px;align-items:center"><span class="sid">${esc(m.id)}</span>${st === "working" ? `<span class="pulse${wt ? " amber" : ""}"></span>` : ""}<span class="badge ${bst}">${label}</span></div><h2>${esc(m.title)}</h2><div class="muted">${esc(m.summary || "")}</div>${actions.trim() ? `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">${actions}</div>` : ""}`;
   $("sheet-body").innerHTML = `
     ${m.note ? `<div class="sec"><div class="muted">${esc(m.note)}</div></div>` : ""}
     <div class="sec"><h3>Run</h3><dl class="kv">
-      <dt>Status</dt><dd>${label}${m.status === "working" ? ` · ${esc(phaseLabel(m.phase))}` : ""}</dd>
+      <dt>Status</dt><dd>${label}${m.status === "working" ? ` · ${msDoing(m)}` : ""}</dd>
+      ${((k) => (k ? `<dt>Mock</dt><dd><a class="prlink" href="${esc(k.href)}" target="_blank" rel="noopener">Open mock ↗</a>${k.url ? ` · <a class="prlink" href="${esc(k.url)}" target="_blank" rel="noopener">published ↗</a>` : ""}</dd>` : ""))(mockOf(m))}
       ${m.shippedAt ? `<dt>Landed</dt><dd>${esc(m.shippedAt)} · ${shaLink(m.landedSha)}</dd>` : ""}
       ${m.branch ? `<dt>Branch</dt><dd class="mono">${esc(m.branch)}</dd>` : ""}
       ${m.spec ? `<dt>Spec</dt><dd>${fileLink(m.spec, "repoDir")}</dd>` : ""}
@@ -1076,6 +1161,23 @@ function epicSheet() {
 }
 
 /* ---------- tiny markdown ---------- */
+/* a section heading's icon, by what the section is about (brief, spec and sheet headings) */
+const HEAD_ICONS = [["goal", "🎯"], ["objective", "🎯"], ["acceptance", "✅"], ["success criteria", "🏆"], ["files in scope", "📁"], ["files", "📁"],
+  ["context", "🧭"], ["depends on", "🔗"], ["dependencies", "🔗"], ["contract", "📜"], ["done when", "🏁"], ["brief items", "📌"], ["covers", "📌"],
+  ["brief", "📝"], ["document", "📄"], ["run", "⚙️"], ["progress", "⏱️"], ["commits", "🔀"], ["tasks", "🗂️"], ["open questions", "❓"],
+  ["unknowns", "❓"], ["milestones", "🗺️"], ["decisions", "⚖️"], ["constraints", "🚧"], ["non-goals", "🚫"], ["risks", "⚠️"],
+  ["danger", "⚠️"], ["requirements", "📋"], ["edge cases", "🧩"], ["user scenarios", "👤"], ["user story", "👤"], ["reuse", "♻️"],
+  ["budget", "💰"], ["data sources", "🛰️"], ["module", "🧱"], ["shape", "🧱"], ["seams", "🧵"], ["story graph", "🕸️"], ["quality gate", "🛡️"]];
+const headIcon = (text) => HEAD_ICONS.find(([k]) => text.trim().toLowerCase().startsWith(k))?.[1];
+const withIcon = (text, html) => ((i) => (i ? `<span class="hicon">${i}</span>` : "") + html)(headIcon(text));
+/* the sheet's own section headings (Brief, Run, Commits…) get theirs once rendered */
+function iconSheetHeads() {
+  for (const h of $("sheet-body").querySelectorAll(".sec > h3")) {
+    const t = h.firstChild;
+    if (t?.nodeType === Node.TEXT_NODE && !h.querySelector(".hicon") && headIcon(t.textContent)) t.before(Object.assign(document.createElement("span"), { className: "hicon", textContent: headIcon(t.textContent) }));
+  }
+}
+
 function md(src) {
   const inline = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|\W)_([^_]+)_(?=\W|$)/g, "$1<i>$2</i>");
   const out = [];
@@ -1085,7 +1187,7 @@ function md(src) {
     if (code !== null) { if (/^```/.test(line)) { out.push(`<pre><code>${esc(code)}</code></pre>`); code = null; } else code += (code ? "\n" : "") + line; continue; }
     if (/^```/.test(line)) { closeList(); code = ""; continue; }
     let m;
-    if ((m = line.match(/^(#{1,3})\s+(.*)/))) { closeList(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); }
+    if ((m = line.match(/^(#{1,3})\s+(.*)/))) { closeList(); out.push(`<h${m[1].length}>${withIcon(m[2], inline(m[2]))}</h${m[1].length}>`); }
     else if ((m = line.match(/^\s*[-*]\s+\[( |x)\]\s+(.*)/i))) { if (list !== "ul") { closeList(); out.push("<ul>"); list = "ul"; } out.push(`<li class="task">${m[1].trim() ? "☑" : "☐"} <span>${inline(m[2])}</span></li>`); }
     else if ((m = line.match(/^\s*[-*]\s+(.*)/))) { if (list !== "ul") { closeList(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inline(m[1])}</li>`); }
     else if ((m = line.match(/^\s*\d+\.\s+(.*)/))) { if (list !== "ol") { closeList(); out.push("<ol>"); list = "ol"; } out.push(`<li>${inline(m[1])}</li>`); }
@@ -1156,6 +1258,7 @@ let toastT;
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3200); }
 
 document.addEventListener("click", (ev) => {
+  if (ev.target.closest("a[href]")) return; // a PR link inside a card opens itself, not the card
   const th = ev.target.closest("[data-theme-set]");
   if (th) { setTheme(th.dataset.themeSet); return; }
   const rl = ev.target.closest("[data-release]");
@@ -1194,6 +1297,7 @@ document.addEventListener("keydown", (ev) => {
   else if (ev.key === "Enter" && ev.target.matches(".node, .ecard")) ev.target.click();
 });
 $("q").addEventListener("input", (ev) => { S.query = ev.target.value; applyFilter(); });
+new MutationObserver(iconSheetHeads).observe($("sheet-body"), { childList: true });
 $("scrim").addEventListener("click", closeSheet);
 $("sheet-close").addEventListener("click", closeSheet);
 $("feed-toggle").addEventListener("click", () => $("feed").classList.toggle("on"));

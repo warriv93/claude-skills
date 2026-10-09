@@ -4,7 +4,7 @@
 2. **Dependencies:** a story depends on another only when it needs that story's code — an interface, a migration, a module. Write each one into `deps`. The graph is acyclic.
 3. **File overlap:** two stories with no dependency path between them that share a file → the later id gets `overlapAfter: [<earlier id>]`, so they land in different waves.
 4. **Model:** `opus` for correctness-critical stories (money, dates and time zones, concurrency, auth, migrations, core algorithms), `sonnet` for the rest.
-5. **Write each brief** to `stories/<milestone>/<id>.md`. The brief is self-contained: the story's agent reads it and the files it names, nothing else.
+5. **Write each brief** to `podium/stories/<milestone>/<id>.md`. The brief is self-contained: the story's agent reads it and the files it names, nothing else.
 
    ```markdown
    # <id> · <title>

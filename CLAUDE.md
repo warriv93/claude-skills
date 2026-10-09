@@ -15,7 +15,7 @@ Done when every changed line has passed its pruning checks (single source of tru
 - A private skill's name carries `deep` (`deep-plan`, `deep-app-plan`, `orchestrate-deep-plans`), so it never shares a name with a Parkster skill in `~/gitrepos/parkster-skills`; `create-pr` is the one deliberate twin.
 - `SKILL.md` holds what every run needs; material only one phase needs goes in that phase's file.
 - Shared rules live once in `SKILL.md` under a leading word (_ledger_, _checkpoint_, _contract_, _subagent protocol_); phase files use the word and leave the definition where it is.
-- `/deep-plan`, `/deep-app-plan` and `/orchestrate-deep-plans` share `.deep-plan/`: `project.md` belongs to `/deep-app-plan`; `podium.json`, `events.jsonl`, `requests.jsonl`, `human.json`, `handoffs.json`, `watcher.json` and `stories/` to `/orchestrate-deep-plans`; every other file to `/deep-plan`.
+- `/deep-plan`, `/deep-app-plan` and `/orchestrate-deep-plans` share `.deep-plan/`: `project.md` belongs to `/deep-app-plan`; `podium/` to `/orchestrate-deep-plans`; every other file to `/deep-plan`.
 - The agent can't run slash commands like `/clear` or `/compact`; a context reset is a request to the user.
 - Skills also run in Antigravity. Keep writing them in Claude Code terms; when a skill starts using a new tool, model or command, add its row to `gemini/claude-tool-map/SKILL.md`, the one place the translation lives.
 - After a skill change, update the skill table and Dependencies section in `README.md`.

@@ -25,12 +25,12 @@ With `buildAll` on, the next wave starts when every story of the current wave is
    - Fallback: `Agent` with `isolation: "worktree"`, `run_in_background: true`, the story's model, and the story prompt preceded by `git switch -c story/<id>`.
 2. **Record:** `podium.py set <id> status=working attempts+=1 agent=<{backend, id, workspace}> branch=story/<id> startedAt=now --event dispatched backend=… model=…`.
 
-Story prompt, static part first:
+Story prompt, static part first (`<podium dir>` is the absolute path of the run dir's `podium/`):
 
 ```
 You build one story of an epic, alone, in this worktree.
-Your brief is <absolute run dir>/stories/<milestone>/<id>.md. Read it; it names everything you need.
-Log each step by appending one line to <absolute run dir>/stories/<milestone>/<id>.progress:
+Your brief is <podium dir>/stories/<milestone>/<id>.md. Read it; it names everything you need.
+Log each step by appending one line to <podium dir>/stories/<milestone>/<id>.progress:
 `<ISO time> <STAGE> <note>`, STAGE one of STARTED, RED (tests written and failing), GREEN, REFACTOR, CONTRACT (contract green), COMMITTED (note = sha), FAILED (note = why).
 Work test-first: RED, GREEN, REFACTOR, then run the contract.
 Finish with one commit on story/<id> whose message ends with the trailer `Story: <id>`, log COMMITTED <sha>, and stop.

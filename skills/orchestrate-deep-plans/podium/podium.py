@@ -2,6 +2,7 @@
 """Read and change `podium.json` without loading it into the agent's context.
 
 Every write is atomic (temp file, then rename) and stamps `updatedAt`.
+The files live in the run dir's `podium/` folder (podium_dir).
 Git commands run in the repo, the run directory's parent.
 
 TARGETS
@@ -80,10 +81,19 @@ DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 HOURS = {"days": "Mon-Fri", "from": "07:00", "to": "17:00"}
 
 
+def podium_dir(root):
+    """The orchestrator's own folder in the run dir, `<run dir>/podium/`; a run begun before it keeps its files in
+    the run dir itself (podium.json at the top) and is read there until they are moved."""
+    d = os.path.join(root, "podium")
+    legacy = not os.path.exists(os.path.join(d, "podium.json")) and os.path.exists(os.path.join(root, "podium.json"))
+    return root if legacy else d
+
+
 class Podium:
     def __init__(self, root):
         self.root = os.path.abspath(root)
-        self.path = os.path.join(self.root, "podium.json")
+        self.dir = podium_dir(self.root)
+        self.path = os.path.join(self.dir, "podium.json")
         self.repo = os.path.dirname(self.root)
         try:
             with open(self.path) as f:
@@ -93,6 +103,7 @@ class Podium:
 
     def save(self):
         self.data["updatedAt"] = NOW()
+        os.makedirs(self.dir, exist_ok=True)
         tmp = self.path + ".tmp"
         with open(tmp, "w") as f:
             json.dump(self.data, f, indent=2, ensure_ascii=False)
@@ -105,7 +116,7 @@ class Podium:
             line["milestone"] = milestone
         if story:
             line["story"] = story
-        with open(os.path.join(self.root, "events.jsonl"), "a") as f:
+        with open(os.path.join(self.dir, "events.jsonl"), "a") as f:
             f.write(json.dumps(line, ensure_ascii=False) + "\n")
 
     # --- lookup -------------------------------------------------------------
@@ -148,7 +159,7 @@ class Podium:
     def handed_off(self, m):
         """Ids of m's stories the user took to a session of their own (handoffs.json, the Podium's copy button)."""
         try:
-            with open(os.path.join(self.root, "handoffs.json")) as f:
+            with open(os.path.join(self.dir, "handoffs.json")) as f:
                 return {k.split("/", 1)[1] for k in json.load(f) if k.startswith(m["id"] + "/")}
         except (OSError, ValueError):
             return set()
@@ -204,7 +215,7 @@ def availability(root, data, t=None):
     t = t or datetime.now()
     hours = {**HOURS, **((data.get("human") or {}).get("hours") or {})}
     try:
-        with open(os.path.join(root, "human.json")) as f:
+        with open(os.path.join(podium_dir(root), "human.json")) as f:
             o = json.load(f)
     except (OSError, ValueError):
         o = None
@@ -468,7 +479,7 @@ def cmd_prs(p, args):
 
 
 def cmd_backfill(p, _):
-    events_path = os.path.join(p.root, "events.jsonl")
+    events_path = os.path.join(p.dir, "events.jsonl")
     kept = []
     if os.path.exists(events_path):
         with open(events_path) as f:

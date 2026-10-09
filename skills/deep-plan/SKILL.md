@@ -30,7 +30,7 @@ Start every turn by reading the ledger and resuming from it; create it if missin
 
 ## Orchestrated runs
 
-`.deep-plan/podium.json` exists → `/orchestrate-deep-plans` owns this run:
+`.deep-plan/podium/podium.json` exists → `/orchestrate-deep-plans` owns this run:
 
 - Change `podium.json` and `events.jsonl` only through `python3 <this skill>/../orchestrate-deep-plans/podium/podium.py`. At every checkpoint: `set milestone: phase=<phase> artifacts+=<{name, path, phase}> --event phase phase=<phase>`, one `artifacts+=` per new planning file.
 - Before every question to the user and every sign-off gate, run `podium.py human`. Unavailable → orchestrate-deep-plans' rule for an unavailable user (its SKILL.md, The human) replaces asking.

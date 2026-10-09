@@ -1,6 +1,6 @@
 # Phase 0 — Adopt a planned project
 
-Runs when `.deep-plan/` holds deep-plan history (ledgers, spec briefs) but no `podium.json`. The project becomes a set of epics whose milestones are its past and planned deep-plan runs. The existing files stay as they are.
+Runs when `.deep-plan/` holds deep-plan history (ledgers, spec briefs) but no `podium/podium.json`. The project becomes a set of epics whose milestones are its past and planned deep-plan runs. The existing files stay as they are.
 
 1. **Find the runs:** every `state*.md` under `.deep-plan/`, plus runs recorded only inside another ledger's archive section. Name each run from its ledger's title line; filenames can lie.
 2. **Inventory** with `Explore` subagents, about five runs each, in parallel, quoting paths:
@@ -9,6 +9,7 @@ Runs when `.deep-plan/` holds deep-plan history (ledgers, spec briefs) but no `p
    - each shipped milestone's stories and their commits (see Messy history);
    - gate results from each `findings-phase-3.md` / `findings-phase-4.md`, or the ledger's gate line;
    - open items: a draft brief's open questions, park reasons, brief items no milestone covers.
+   - mocks: HTML mocks under the run dir or repo and claude.ai artifact links in briefs and ledgers, each set as `mock` on the epic or milestone it belongs to.
 3. **Group runs into epics:** each product brief is an epic holding the runs planned from it (its own run and the runs that finish it), not every run that touches its flows. Runs no brief covers are grouped by theme, the area of the product they touch (a theme with one run joins its nearest neighbour). Put the grouping to the user in one `AskUserQuestion`: the proposal as the recommended option, with a coarser and a finer alternative in the descriptions.
 4. **Map statuses:** landed in git → `done`, whatever the brief's header says; brief written but not signed off → `draft`; parked → `parked`; named for later → `later`; built, then removed by the owner → `dropped` (a milestone or a story).
 5. **Write `podium.json`:** `podium.py set . project=… active=null epics=@<file>` with the confirmed epics and in each every milestone: its stories (`status: "done"`, `tasks`), `quality.gate`, `covers`, `open`, `note`, plus each epic's `uncovered` items. Each implied dependency and each guess goes into that milestone's `note`, in words. Then fill every shipped story's commits with `podium.py commits <range or --no-walk shas> --into <milestone>/<story>`; list a run's commits first with `podium.py commits <range>` to assign them.

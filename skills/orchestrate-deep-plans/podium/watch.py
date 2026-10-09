@@ -23,7 +23,7 @@ import os
 import subprocess
 import time
 
-from podium import availability  # one reading of the user's availability
+from podium import availability, podium_dir  # one reading of the user's availability and files
 from server import load_run  # one reader for podium.json, shared with the server
 
 
@@ -48,7 +48,8 @@ def main():
 
     offsets = {}
     def watched():
-        return [os.path.join(root, "requests.jsonl"), *glob.glob(os.path.join(root, "stories", "*", "*.progress"))]
+        pod = podium_dir(root)
+        return [os.path.join(pod, "requests.jsonl"), *glob.glob(os.path.join(pod, "stories", "*", "*.progress"))]
 
     for path in watched():
         if not os.path.exists(path):
@@ -57,7 +58,7 @@ def main():
 
     def human():
         try:
-            with open(os.path.join(root, "podium.json")) as f:
+            with open(os.path.join(podium_dir(root), "podium.json")) as f:
                 data = json.load(f)
         except (OSError, ValueError):
             data = {}
@@ -70,9 +71,10 @@ def main():
     while True:
         if time.time() - last_beat > 5:
             last_beat = time.time()
-            with open(os.path.join(root, "watcher.json.tmp"), "w") as f:
+            beat = os.path.join(podium_dir(root), "watcher.json")
+            with open(beat + ".tmp", "w") as f:
                 json.dump({"pid": os.getpid(), "at": last_beat}, f)
-            os.replace(os.path.join(root, "watcher.json.tmp"), os.path.join(root, "watcher.json"))
+            os.replace(beat + ".tmp", beat)
 
         for path in watched():
             if not os.path.exists(path):

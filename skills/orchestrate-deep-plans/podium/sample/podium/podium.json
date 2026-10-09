@@ -132,7 +132,7 @@
                   "minus": 3
                 }
               ],
-              "brief": "stories/M2/S1.md",
+              "brief": "podium/stories/M2/S1.md",
               "branch": "story/S1",
               "agent": {
                 "backend": "paseo",
@@ -161,7 +161,7 @@
                   "minus": 0
                 }
               ],
-              "brief": "stories/M2/S2.md",
+              "brief": "podium/stories/M2/S2.md",
               "branch": "story/S2",
               "agent": {
                 "backend": "paseo",
@@ -196,7 +196,7 @@
                   "minus": 30
                 }
               ],
-              "brief": "stories/M2/S3.md",
+              "brief": "podium/stories/M2/S3.md",
               "branch": "story/S3",
               "agent": {
                 "backend": "paseo",
@@ -219,7 +219,7 @@
               "model": "opus",
               "attempts": 1,
               "startedAt": "2026-10-08T14:43:32+00:00",
-              "brief": "stories/M2/S4.md",
+              "brief": "podium/stories/M2/S4.md",
               "branch": "story/S4",
               "agent": {
                 "backend": "paseo",
@@ -241,7 +241,7 @@
               "model": "sonnet",
               "attempts": 1,
               "startedAt": "2026-10-08T14:50:32+00:00",
-              "brief": "stories/M2/S5.md",
+              "brief": "podium/stories/M2/S5.md",
               "branch": "story/S5",
               "agent": {
                 "backend": "paseo",
@@ -267,7 +267,7 @@
                 "tool": "Bash",
                 "detail": "npm run db:migrate -- --env test"
               },
-              "brief": "stories/M2/S8.md",
+              "brief": "podium/stories/M2/S8.md",
               "branch": "story/S8",
               "agent": {
                 "backend": "paseo",
@@ -290,7 +290,7 @@
               "startedAt": "2026-10-08T14:04:32+00:00",
               "finishedAt": "2026-10-08T15:02:32+00:00",
               "failure": "Contract `npm test` red after 2 attempts: expire-invites.spec.ts expects UTC midnight, job uses server local time.",
-              "brief": "stories/M2/S9.md",
+              "brief": "podium/stories/M2/S9.md",
               "branch": "story/S9",
               "agent": {
                 "backend": "paseo",
@@ -310,7 +310,7 @@
               "status": "todo",
               "model": "sonnet",
               "attempts": 0,
-              "brief": "stories/M2/S11.md",
+              "brief": "podium/stories/M2/S11.md",
               "branch": "story/S11"
             },
             {
@@ -327,7 +327,7 @@
               "status": "todo",
               "model": "sonnet",
               "attempts": 0,
-              "brief": "stories/M2/S6.md",
+              "brief": "podium/stories/M2/S6.md",
               "branch": "story/S6"
             },
             {
@@ -348,7 +348,7 @@
               "status": "todo",
               "model": "sonnet",
               "attempts": 0,
-              "brief": "stories/M2/S7.md",
+              "brief": "podium/stories/M2/S7.md",
               "branch": "story/S7"
             },
             {
@@ -365,7 +365,7 @@
               "status": "blocked",
               "model": "sonnet",
               "attempts": 0,
-              "brief": "stories/M2/S10.md",
+              "brief": "podium/stories/M2/S10.md",
               "branch": "story/S10"
             }
           ],

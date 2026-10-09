@@ -10,28 +10,30 @@ A **project** holds **epics**. An epic is a product brief, or a theme that group
 
 Outside Claude Code (Antigravity, Gemini): activate the `claude-tool-map` skill first and translate every tool, model and command through it.
 
-Start every turn by reading deep-plan's ledger (`.deep-plan/state.md`) and `podium.py status`, and resume from them. `.deep-plan/` holds deep-plan history but no `podium.json` → Phase 0.
+Start every turn by syncing, then reading deep-plan's ledger (`.deep-plan/state.md`) and `podium.py status`, and resume from them. **Sync:** `git fetch`; the base branch behind its origin → fast-forward it, and any milestone that landed there since `podium.json` last saw it is recorded `done` with its stories and commits (Phase 0's steps for those runs). Say in one line what landed elsewhere. `podium.json` is untracked, so it never syncs between machines. `.deep-plan/` holds deep-plan history but no `podium/podium.json` → Phase 0.
+
+**Map first, work on a start.** A bare `/orchestrate-deep-plans` only maps: sync, adopt or reconcile `podium.json` (Phase 0 when there is none), start the Podium and the watcher, and report in one message the link, what is active, done, draft, parked and later, what waits on the user, and any requests queued in `requests.jsonl` before this session. Then end the turn. Work starts only on a **start**: a Podium request that arrives while the watcher runs (plan, assign, build all), or the user naming the work, e.g. `/orchestrate-deep-plans M2` or a feature to plan. Queued requests from before the session are listed, never acted on. A milestone already mid-build resumes its merges and running agents, and dispatches nothing new.
 
 ## Run state — `.deep-plan/`
 
-deep-plan's ledger and files stay deep-plan's. This skill adds:
+deep-plan's ledger and files stay deep-plan's. This skill keeps its own files in the run dir's `podium/` folder; paths below, and every path inside `podium.json`, are relative to the run dir:
 
 | File | Written by |
 | --- | --- |
-| `podium.json` | the orchestrator (this session) |
-| `events.jsonl` | the orchestrator, append-only |
-| `requests.jsonl` | the Podium server, append-only |
-| `human.json` | the Podium server, from its availability toggle |
-| `handoffs.json` | the Podium server, from its copy button |
-| `watcher.json` | the watcher, its heartbeat; the Podium refuses requests without it |
-| `stories/<milestone>/<id>.md` — the story's **brief** | the orchestrator, at breakdown |
-| `stories/<milestone>/<id>.progress` | that story's agent, append-only |
+| `podium/podium.json` | the orchestrator (this session) |
+| `podium/events.jsonl` | the orchestrator, append-only |
+| `podium/requests.jsonl` | the Podium server, append-only |
+| `podium/human.json` | the Podium server, from its availability toggle |
+| `podium/handoffs.json` | the Podium server, from its copy button |
+| `podium/watcher.json` | the watcher, its heartbeat; the Podium refuses requests without it |
+| `podium/stories/<milestone>/<id>.md` — the story's **brief** | the orchestrator, at breakdown |
+| `podium/stories/<milestone>/<id>.progress` | that story's agent, append-only |
 
 **Single writer:** every file has exactly one writer, so parallel agents never race.
 
 **`podium.py`** (`python3 <this skill>/podium/podium.py`; run it bare for its commands) is the orchestrator's only way into `podium.json` and `events.jsonl`: `status` and `get` to read, `set` to change, `commits`, `merge` and `backfill` for git, `prs` for pull-request state. It writes atomically and keeps the file, which grows to hundreds of kilobytes, out of context. Give every change a person would want to see an `--event`.
 
-[`podium/sample/`](podium/sample/) is the reference run: copy the shapes of `podium.json`, `events.jsonl` and `stories/*` from it. Field values:
+[`podium/sample/`](podium/sample/) is the reference run: copy the shapes of `podium/podium.json`, `podium/events.jsonl` and `podium/stories/*` from it. Field values:
 
 - `epics[]`: `id`, `title`, `summary`, `spec` (its brief, if any), `milestones`, `uncovered`. Milestone ids are unique across the project.
 - `active`: `{epic, milestone}` for the one milestone being planned or built, or `null`.
@@ -41,6 +43,7 @@ deep-plan's ledger and files stay deep-plan's. This skill adds:
 - `deps`: ids it is blocked by (milestones among milestones, stories within a milestone). `stories[].overlapAfter`: ids it shares files with, which must merge first.
 - `needsYou`: `{reason, story?}` while the run waits on the user, otherwise `null`.
 - `milestones[].pr`: `{number, url, state}` once its PR is open; `state` is `draft` `open` `merged` `closed`.
+- `mock` (an epic's or a milestone's): `{path, url}` of its UI mock. `path` is relative to the run dir, which the Podium hosts (`../` reaches the repo, hosted under `/repo/`); `url` is a published copy, such as a claude.ai artifact. A milestone artifact with `phase: "mock"` counts as its mock. The Podium shows a 🎨 link on the card, the page title and the sheet.
 - Progress lines: `<ISO time> <STAGE> <note>`, STAGE one of `STARTED` `RED` `GREEN` `REFACTOR` `CONTRACT` `COMMITTED` `FAILED`.
 
 ## Podium
@@ -51,7 +54,7 @@ deep-plan's ledger and files stay deep-plan's. This skill adds:
 
 ## The human
 
-The user is **available** or **unavailable**; `podium.py human` says which and until when. Their hours decide (`human.hours` in `podium.json`, `{days: "Mon-Fri", from: "07:00", to: "17:00"}` by default, local time) unless the Podium's toggle overrides them until the next change of hours. The user says in the terminal they're leaving or back → flip the toggle for them: `curl -s -X POST <podium>/human/<unavailable|available|auto>`, plus `?until=HH:MM` for another end. The watcher prints `HUMAN <mode>` on every flip; append a `human` event (`set . --event human mode=<mode>`).
+The user is **available** or **unavailable**; `podium.py human` says which and until when. Their hours decide (`human.hours` in `podium.json`, `{days: "Mon-Fri", from: "07:00", to: "17:00"}` by default, local time) unless the Podium's toggle overrides them until the next change of hours. The user invoking `/orchestrate-deep-plans` themselves makes them available for the session, whatever their hours: flip the toggle to `available` (a watcher event or an agent finishing is not an invocation). The user says in the terminal they're leaving or back → flip the toggle for them: `curl -s -X POST <podium>/human/<unavailable|available|auto>`, plus `?until=HH:MM` for another end. The watcher prints `HUMAN <mode>` on every flip; append a `human` event (`set . --event human mode=<mode>`).
 
 - **Available:** ask as each phase says.
 - **Unavailable:** keep the run moving on your own judgement. Every question a phase or deep-plan would put to the user, sign-off gates and the grill included, becomes an **assumption**: take the option you'd recommend, record it with `podium.py assume "<question>" "<choice>" "<why>" [--story <id>]`, and carry on. Skip a context reset deep-plan would ask for.

@@ -2,7 +2,7 @@
 """The Podium server of the orchestrate skill this folder sits in.
 
 Serves `podium.html` (next to this file) plus the run directory (default
-`.deep-plan/`) on 127.0.0.1, and turns the
+`.deep-plan/`, whose `podium/` folder holds the orchestrator's files) on 127.0.0.1, and turns the
 Podium's buttons into lines in `requests.jsonl`, which the orchestrator
 watches. The browser only ever sends an action and a story id; prompts are
 built by the orchestrator from the story brief.
@@ -28,6 +28,8 @@ podium.py's reading of the user's availability.
     python3 server.py [--dir .deep-plan] [--port 8765]
 """
 import argparse
+import mimetypes
+import urllib.parse
 import json
 import os
 import re
@@ -38,7 +40,10 @@ from datetime import datetime, timedelta, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from podium import HOURS, availability, next_change  # one reading of the user's availability
+from podium import HOURS, availability, next_change, podium_dir  # one reading of the user's availability and files
+
+# Run files that are normal to lack early on: an empty answer instead of a 404 on every poll.
+EMPTY_WHEN_MISSING = {"handoffs.json": {}, "events.jsonl": ""}
 
 STORY_ID = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 ACTIONS = {"assign", "plan", "build-all", "stop"}  # assign and plan take an id
@@ -48,7 +53,7 @@ def load_run(root):
     """The run's milestones (across every epic) and the active milestone, from podium.json or an older epic.json."""
     for name in ("podium.json", "epic.json"):
         try:
-            with open(os.path.join(root, name)) as f:
+            with open(os.path.join(podium_dir(root), name)) as f:
                 data = json.load(f)
             break
         except (OSError, ValueError):
@@ -85,7 +90,7 @@ def story_prompt(root, milestone, story):
         trees = {os.path.basename(repo): f"{repo}-{sid}"}
         setup = [f"git -C {repo} worktree add -b story/{sid} {repo}-{sid} {milestone.get('branch')}"]
     body = (template.replace(" <repo>: <path>, one per line.", "\n" + "\n".join(f"{r}: {t}" for r, t in trees.items()))
-            .replace("<absolute run dir>", root).replace("<milestone>", mid).replace("<id>", sid))
+            .replace("<podium dir>", podium_dir(root)).replace("<milestone>", mid).replace("<id>", sid))
     return (f"You run outside the orchestrator, which tracks you only through the progress file named below: "
             f"log STARTED before anything else and end on COMMITTED or FAILED. It merges your commit when it reads COMMITTED.\n\n"
             f"First set up your worktree{'s' if len(trees) > 1 else ''}, then work only there:\n" + "\n".join(setup) + "\n\n" + body + "\n")
@@ -94,7 +99,7 @@ def story_prompt(root, milestone, story):
 def watching(root):
     """Whether an orchestrator's watcher is running: its heartbeat in watcher.json is under 30 s old."""
     try:
-        with open(os.path.join(root, "watcher.json")) as f:
+        with open(os.path.join(podium_dir(root), "watcher.json")) as f:
             return time.time() - json.load(f)["at"] < 30
     except (OSError, ValueError, KeyError):
         return False
@@ -103,7 +108,7 @@ def watching(root):
 def handoffs(root):
     """handoffs.json: {"<milestone>/<story>": {at}} for each story the user took to a session of their own."""
     try:
-        with open(os.path.join(root, "handoffs.json")) as f:
+        with open(os.path.join(podium_dir(root), "handoffs.json")) as f:
             return json.load(f)
     except (OSError, ValueError):
         return {}
@@ -128,6 +133,10 @@ def make_handler(root):
                 return self.prompt(*([p for p in self.path.split("/") if p][1:] + [None, None])[:2])
             if self.path == "/human":
                 return self.reply(200, availability(root, self.podium()))
+            if os.path.basename(self.path.split("?")[0]) in EMPTY_WHEN_MISSING and not os.path.exists(self.translate_path(self.path)):
+                return self.empty(EMPTY_WHEN_MISSING[os.path.basename(self.path.split("?")[0])])
+            if self.path.startswith("/repo/"):
+                return self.repo_file(self.path[len("/repo/"):].split("?")[0])
             if self.path.split("?")[0] in ("/", "/index.html", "/podium.html"):
                 with open(PAGE, "rb") as f:
                     data = f.read()
@@ -138,6 +147,20 @@ def make_handler(root):
                 self.wfile.write(data)
                 return
             super().do_GET()
+
+        def repo_file(self, rel):
+            """A file of the repo the run dir sits in, read-only: a mock kept outside the run dir."""
+            base = os.path.realpath(os.path.dirname(root))
+            full = os.path.realpath(os.path.join(base, urllib.parse.unquote(rel)))
+            if not full.startswith(base + os.sep) or not os.path.isfile(full):
+                return self.send_error(404)
+            with open(full, "rb") as f:
+                data = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", mimetypes.guess_type(full)[0] or "application/octet-stream")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
 
         def do_POST(self):
             url = urlparse(self.path)
@@ -157,7 +180,7 @@ def make_handler(root):
                     return self.reply(404, {"error": "unknown id"})
             line = {"action": action, "story": story,
                     "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-            with open(os.path.join(root, "requests.jsonl"), "a") as f:
+            with open(os.path.join(podium_dir(root), "requests.jsonl"), "a") as f:
                 f.write(json.dumps(line) + "\n")
             self.reply(202, {"queued": line})
 
@@ -171,7 +194,7 @@ def make_handler(root):
             story = next((s for s in (active or {}).get("stories", []) if s.get("id") == sid), None)
             if not story or (take and story.get("status") != "todo"):
                 return self.reply(404, {"error": "no story to hand off" if take else "unknown id"})
-            path, key = os.path.join(root, "handoffs.json"), f"{active['id']}/{sid}"
+            path, key = os.path.join(podium_dir(root), "handoffs.json"), f"{active['id']}/{sid}"
             taken = handoffs(root)
             if take:
                 taken[key] = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
@@ -204,14 +227,14 @@ def make_handler(root):
 
         def podium(self):
             try:
-                with open(os.path.join(root, "podium.json")) as f:
+                with open(os.path.join(podium_dir(root), "podium.json")) as f:
                     return json.load(f)
             except (OSError, ValueError):
                 return {}
 
         def toggle(self, mode, until):
             """Override the hours until `until` (HH:MM, the next one) or the next change of hours; `auto` clears it."""
-            path = os.path.join(root, "human.json")
+            path = os.path.join(podium_dir(root), "human.json")
             if mode == "auto":
                 if os.path.exists(path):
                     os.remove(path)
@@ -239,6 +262,14 @@ def make_handler(root):
             if action == "plan":
                 return {m.get("id") for m in milestones}
             return {s.get("id") for s in (active or {}).get("stories", [])}
+
+        def empty(self, body):
+            data = json.dumps(body).encode() if isinstance(body, dict) else body.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json" if isinstance(body, dict) else "text/plain")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
 
         def reply(self, code, body):
             data = json.dumps(body).encode()

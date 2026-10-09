@@ -14,6 +14,7 @@
   --green: #28a745; --green-dot: #34c759; --green-soft: rgba(52,199,89,.12);
   --amber: #c27c00; --amber-dot: #ff9f0a; --amber-soft: rgba(255,159,10,.14);
   --red: #d70015; --red-soft: rgba(255,59,48,.10);
+  --purple: #8250df; --purple-soft: rgba(130,80,223,.12);
   --gray-soft: rgba(142,142,147,.14);
   --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.06);
   --shadow-hi: 0 2px 4px rgba(0,0,0,.06), 0 14px 36px rgba(0,0,0,.12);
@@ -29,6 +30,7 @@
     --green: #30d158; --green-dot: #30d158; --green-soft: rgba(48,209,88,.16);
     --amber: #ffb340; --amber-dot: #ff9f0a; --amber-soft: rgba(255,159,10,.18);
     --red: #ff6961; --red-soft: rgba(255,69,58,.16);
+    --purple: #b392f0; --purple-soft: rgba(163,113,247,.18);
     --gray-soft: rgba(142,142,147,.20);
     --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
     --shadow-hi: 0 2px 4px rgba(0,0,0,.5), 0 14px 36px rgba(0,0,0,.55);
@@ -42,6 +44,7 @@
   --green: #30d158; --green-dot: #30d158; --green-soft: rgba(48,209,88,.16);
   --amber: #ffb340; --amber-dot: #ff9f0a; --amber-soft: rgba(255,159,10,.18);
   --red: #ff6961; --red-soft: rgba(255,69,58,.16);
+  --purple: #b392f0; --purple-soft: rgba(163,113,247,.18);
   --gray-soft: rgba(142,142,147,.20);
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
   --shadow-hi: 0 2px 4px rgba(0,0,0,.5), 0 14px 36px rgba(0,0,0,.55);
@@ -371,6 +374,22 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
 .badge.draft { background: var(--accent-soft); color: var(--accent); }
 .badge.parked, .badge.later { background: var(--gray-soft); color: var(--text-2); }
 .badge.dropped { color: var(--text-3); padding-left: 0; text-decoration: line-through; }
+/* status icons: each badge state draws its glyph in the badge's own colour */
+.badge::before { content: none; flex: none; width: 12px; height: 12px; background: currentColor; -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat; }
+.badge.done { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E"); }
+.badge.merged { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='18' cy='18' r='3'/%3E%3Ccircle cx='6' cy='6' r='3'/%3E%3Cpath d='M6 21V9a9 9 0 0 0 9 9'/%3E%3C/svg%3E"); }
+.badge.failed { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E"); }
+.badge.blocked { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E"); }
+.badge.waiting { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2h12M6 22h12M7 2c0 5 10 5 10 10S7 17 7 22M17 2c0 5-10 5-10 10s10 5 10 10'/%3E%3C/svg%3E"); }
+.badge.ready { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4v16l13-8z'/%3E%3C/svg%3E"); }
+.badge.elsewhere { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='12' rx='2'/%3E%3Cpath d='M2 20h20'/%3E%3C/svg%3E"); }
+.badge.draft { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'/%3E%3C/svg%3E"); }
+.badge.parked { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5v14M15 5v14'/%3E%3C/svg%3E"); }
+.badge.later { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E"); }
+.badge.dropped { --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m5.6 5.6 12.8 12.8'/%3E%3C/svg%3E"); }
+.badge.done::before, .badge.failed::before, .badge.blocked::before, .badge.waiting::before, .badge.ready::before, .badge.elsewhere::before, .badge.draft::before, .badge.parked::before, .badge.later::before, .badge.dropped::before { content: ""; }
+.badge.ready::before { width: 10px; height: 10px; }
+.badge.merged { background: var(--purple-soft); color: var(--purple); }
 .node.draft, .node.parked, .node.later { background: var(--card); border-style: dashed; }
 .node.parked .title, .node.later .title { color: var(--text-2); }
 .node.dropped { opacity: .45; }
@@ -402,7 +421,6 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
 <body>
 <header class="topbar">
   <div class="topbar-inner">
-    <button class="back" id="to-epics" hidden>‹ Epics</button>
     <svg class="logo" id="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#1c1c1e"/></linearGradient><linearGradient id="lg-blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2997ff"/><stop offset="1" stop-color="#0066d6"/></linearGradient><linearGradient id="lg-amber" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb340"/><stop offset="1" stop-color="#f08c00"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#lg-tile)"/><rect x=".5" y=".5" width="63" height="63" rx="13.5" fill="none" stroke="#fff" stroke-opacity=".14"/><rect x="20" y="17" width="6" height="26" rx="3" fill="#34c759"/><rect x="29" y="9" width="6" height="34" rx="3" fill="url(#lg-blue)"/><rect x="38" y="23" width="6" height="20" rx="3" fill="url(#lg-amber)"/><rect x="18" y="46" width="28" height="5" rx="1.5" fill="#f5f5f7"/><rect x="13" y="50.5" width="38" height="5" rx="1.5" fill="#fff"/></svg>
     <div class="brand">
       <span class="eyebrow" id="eyebrow">Epic</span>
@@ -491,8 +509,10 @@ function vsc(path, base = "runDir") {
   return "vscode://file" + encodeURI(`${S.info[base]}/${path}`.replace(/\/\.?\//g, "/"));
 }
 fetch("/info", { cache: "no-store" }).then((r) => r.json()).then((i) => { S.info = i; if (S.epic) render(); if (S.selected) renderSheet(); }).catch(() => {});
+/* a poll from a tab in view keeps the server alive; a hidden tab lets it stop when idle */
+const seen = () => ({ "X-Podium-Visible": document.visibilityState === "visible" ? "1" : "0" });
 async function getText(path) {
-  const r = await fetch(path, { cache: "no-store" });
+  const r = await fetch(path, { cache: "no-store", headers: seen() });
   if (!r.ok) throw new Error(r.status);
   return r.text();
 }
@@ -584,7 +604,7 @@ async function poll() {
       } catch { /* none yet */ }
     }
     try {
-      const h = await (await fetch("/human", { cache: "no-store" })).json();
+      const h = await (await fetch("/human", { cache: "no-store", headers: seen() })).json();
       if (JSON.stringify(h) !== JSON.stringify(S.human)) { S.human = h; renderHuman(); }
     } catch { /* an older server */ }
     if (changed) render();
@@ -691,7 +711,6 @@ function render() {
   if (!S.project) return;
   const P = S.project;
   document.title = `Podium · ${P.project.title}`;
-  $("to-epics").hidden = !S.epic || P.epics.length < 2;
   $("filters").hidden = !S.epic;
   document.querySelector(".legend").hidden = !S.epic;
   if (!S.epic) return renderProject();
@@ -758,6 +777,7 @@ function msWaits(m) {
 }
 /* a story is complete only once its milestone has landed; before that it is merged into the milestone branch */
 const storyDone = (m) => (m.status === "done" ? "Completed" : "Merged to branch");
+const doneCls = (m) => (m.status === "done" ? "done" : "done merged");
 
 function epicCard({ E, last, on }) {
   const ms = (E.milestones || []).filter((m) => m.status !== "dropped");
@@ -1035,7 +1055,7 @@ function storyNode(s, p, map) {
   const vm = viewMs(), live = vm.id === S.epic.active && vm.status === "working";
   const st = viewStatus(s, map);
   let foot = "";
-  if (st === "done") foot = `<span class="badge done">${storyDone(vm)}</span>${s.commits?.[0] ? `<span class="when mono">${esc(s.commits[0].sha.slice(0, 7))}</span>` : ""}`;
+  if (st === "done") foot = `<span class="badge ${doneCls(vm)}">${storyDone(vm)}</span>${s.commits?.[0] ? `<span class="when mono">${esc(s.commits[0].sha.slice(0, 7))}</span>` : ""}`;
   else if (st === "working") foot = `<span class="pulse"></span><span class="badge working">Working on</span>${since(s.startedAt)}${agentLink(s)}`;
   else if (st === "approval") foot = `<span class="pulse amber"></span><span class="badge approval">Waiting for approval</span>${agentLink(s)}`;
   else if (st === "elsewhere") foot = `<span class="badge elsewhere">In another session</span>${releaseBtn(s.id)}`;
@@ -1229,7 +1249,7 @@ function renderSheet() {
     : st === "elsewhere" ? `<button class="btn big ghost" data-release="${esc(id)}">✕ Take it back</button>${copyBtn("assign", id)}` : "";
   const log = progressLines(vm.id, id);
   const elapsed = s.startedAt ? dur((s.finishedAt ? Date.parse(s.finishedAt) : Date.now()) - Date.parse(s.startedAt)) : "—";
-  $("sheet-head").innerHTML = `<div class="top" style="display:flex;gap:8px;align-items:center"><span class="sid">${e.single ? "" : `${esc(vm.id)} · `}${esc(id)}</span>${st === "working" ? `<span class="pulse"></span>` : st === "approval" ? `<span class="pulse amber"></span>` : ""}<span class="badge ${st}">${label}</span></div><h2>${esc(s.title)}</h2><div class="muted">${esc(s.summary || "")}</div>${action ? `<div style="margin-top:12px">${action}</div>` : ""}`;
+  $("sheet-head").innerHTML = `<div class="top" style="display:flex;gap:8px;align-items:center"><span class="sid">${e.single ? "" : `${esc(vm.id)} · `}${esc(id)}</span>${st === "working" ? `<span class="pulse"></span>` : st === "approval" ? `<span class="pulse amber"></span>` : ""}<span class="badge ${st === "done" ? doneCls(vm) : st}">${label}</span></div><h2>${esc(s.title)}</h2><div class="muted">${esc(s.summary || "")}</div>${action ? `<div style="margin-top:12px">${action}</div>` : ""}`;
   $("sheet-body").innerHTML = `
     ${s.approval ? `<div class="sec"><div class="approvalbox"><b>Waiting for approval</b> — ${esc(s.approval.tool)}<div class="mono" style="margin-top:4px">${esc(s.approval.detail || "")}</div><div class="muted" style="margin-top:6px">Answer it in Paseo, or in the orchestrator terminal.</div></div></div>` : ""}
     ${s.failure ? `<div class="sec"><div class="failbox"><b>Failure</b> — ${esc(s.failure)}</div></div>` : ""}
@@ -1396,7 +1416,7 @@ document.addEventListener("click", (ev) => {
   if (a) { ev.stopPropagation(); if (!a.disabled) act(a.dataset.act, a.dataset.id); return; }
   const f = ev.target.closest("[data-filter]");
   if (f) { S.filter = f.dataset.filter; renderFilters(); applyFilter(); return; }
-  if (ev.target.closest("#to-epics, [data-epics]")) { setEpic(null); return; }
+  if (ev.target.closest("[data-epics]")) { setEpic(null); return; }
   const ec = ev.target.closest("[data-epic]");
   if (ec) { setEpic(ec.dataset.epic); return; }
   if (ev.target.closest("[data-up]")) { setView(null); return; }

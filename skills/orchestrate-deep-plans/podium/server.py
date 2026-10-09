@@ -25,9 +25,17 @@ The availability toggle writes `human.json` (this server is its only writer):
 POST /human/<available|unavailable|auto>[?until=HH:MM]. GET /human returns
 podium.py's reading of the user's availability.
 
-    python3 server.py [--dir .deep-plan] [--port 8765]
+It stops itself after --idle minutes (default 60, 0 = never) without
+activity: a Podium tab in view (its polls carry X-Podium-Visible), a button,
+or a change to podium.json, events.jsonl or a story's progress file.
+--detach binds the port, prints the URL and returns, leaving the server
+running in the background with its output in server.log in the podium dir.
+
+    python3 server.py [--dir .deep-plan] [--port 8765] [--idle 60] [--detach]
 """
 import argparse
+import glob
+import threading
 import mimetypes
 import urllib.parse
 import json
@@ -126,10 +134,37 @@ def handoffs(root):
         return {}
 
 
+# The last time someone used the Podium; the idle check reads it.
+SEEN = {"at": time.time()}
+
+
+def last_activity(root):
+    """The latest of the last Podium use and the last change to the run's files."""
+    pd = podium_dir(root)
+    paths = [os.path.join(pd, "podium.json"), os.path.join(pd, "events.jsonl")] + glob.glob(os.path.join(pd, "stories", "*", "*.progress"))
+    mtimes = [os.path.getmtime(p) for p in paths if os.path.exists(p)]
+    return max([SEEN["at"]] + mtimes)
+
+
+def stop_when_idle(server, root, minutes):
+    while True:
+        time.sleep(60)
+        if time.time() - last_activity(root) > minutes * 60:
+            print(f"{datetime.now():%H:%M} idle for {minutes} min, stopping", flush=True)
+            server.shutdown()
+            return
+
+
 def make_handler(root):
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *a, **kw):
             super().__init__(*a, directory=root, **kw)
+
+        def parse_request(self):
+            ok = super().parse_request()
+            if ok and (self.command != "GET" or self.headers.get("X-Podium-Visible") == "1"):
+                SEEN["at"] = time.time()
+            return ok
 
         def log_message(self, *_):
             pass
@@ -318,11 +353,24 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default=".deep-plan")
     ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--idle", type=float, default=60, help="minutes without activity before stopping; 0 = never")
+    ap.add_argument("--detach", action="store_true", help="print the URL, then keep serving in the background")
     args = ap.parse_args()
     root = os.path.abspath(args.dir)
     port = free_port(args.port)
     server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(root))
     print(f"http://127.0.0.1:{port}/", flush=True)
+    if args.detach:
+        if os.fork():
+            os._exit(0)  # the port is bound; the child serves it
+        os.setsid()
+        log = open(os.path.join(podium_dir(root), "server.log"), "a")
+        os.dup2(log.fileno(), sys.stdout.fileno())
+        os.dup2(log.fileno(), sys.stderr.fileno())
+        os.dup2(os.open(os.devnull, os.O_RDONLY), sys.stdin.fileno())
+        print(f"{datetime.now():%H:%M} serving http://127.0.0.1:{port}/", flush=True)
+    if args.idle > 0:
+        threading.Thread(target=stop_when_idle, args=(server, root, args.idle), daemon=True).start()
     server.serve_forever()
 
 

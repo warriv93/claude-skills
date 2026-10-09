@@ -9,6 +9,7 @@ Prints one line per event the orchestrator must act on:
     PERMISSION <story> <tool>       a Paseo agent waits for approval   (--paseo)
     PERMISSION-CLEARED <story>      that approval was answered          (--paseo)
     IDLE <story>                    a working story's Paseo agent went idle (--paseo)
+    HUMAN <available|unavailable>   the user's availability flipped (hours or the Podium toggle)
 
     python3 watch.py [--dir .deep-plan] [--paseo /path/to/paseo]
 """
@@ -19,6 +20,7 @@ import os
 import subprocess
 import time
 
+from podium import availability  # one reading of the user's availability
 from server import load_run  # one reader for podium.json, shared with the server
 
 
@@ -50,8 +52,17 @@ def main():
             continue
         offsets[path] = os.path.getsize(path)  # start at the end: only new lines are events
 
+    def human():
+        try:
+            with open(os.path.join(root, "podium.json")) as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            data = {}
+        return availability(root, data)["mode"]
+
     waiting, idle = set(), set()
-    last_paseo = 0.0
+    last_paseo = last_human = 0.0
+    mode = human()
     while True:
         for path in watched():
             if not os.path.exists(path):
@@ -71,6 +82,13 @@ def main():
                     emit(f"REQUEST {r.get('action')} {r.get('story') or ''}".rstrip())
                 elif line.split()[1:2] in (["COMMITTED"], ["FAILED"]):
                     emit(f"PROGRESS {os.path.basename(path)[:-len('.progress')]} {line}")
+
+        if time.time() - last_human > 15:
+            last_human = time.time()
+            now_mode = human()
+            if now_mode != mode:
+                emit(f"HUMAN {now_mode}")
+            mode = now_mode
 
         if args.paseo and time.time() - last_paseo > 10:
             last_paseo = time.time()

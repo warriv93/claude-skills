@@ -15,8 +15,11 @@ import os
 import re
 import socket
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
+
+from podium import HOURS, availability, next_change  # one reading of the user's availability
 
 STORY_ID = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 ACTIONS = {"assign", "plan", "build-all", "stop"}  # assign and plan take an id
@@ -61,6 +64,8 @@ def make_handler(root):
         def do_GET(self):
             if self.path == "/info":
                 return self.reply(200, {"runDir": root, "repoDir": os.path.dirname(root)})
+            if self.path == "/human":
+                return self.reply(200, availability(root, self.podium()))
             if self.path.split("?")[0] in ("/", "/index.html", "/podium.html"):
                 with open(PAGE, "rb") as f:
                     data = f.read()
@@ -73,6 +78,9 @@ def make_handler(root):
             super().do_GET()
 
         def do_POST(self):
+            url = urlparse(self.path)
+            if url.path.startswith("/human/"):
+                return self.toggle(url.path[len("/human/"):], parse_qs(url.query).get("until", [None])[0])
             parts = [p for p in self.path.split("/") if p]
             action = parts[0] if parts else ""
             story = parts[1] if len(parts) > 1 else None
@@ -86,6 +94,37 @@ def make_handler(root):
             with open(os.path.join(root, "requests.jsonl"), "a") as f:
                 f.write(json.dumps(line) + "\n")
             self.reply(202, {"queued": line})
+
+        def podium(self):
+            try:
+                with open(os.path.join(root, "podium.json")) as f:
+                    return json.load(f)
+            except (OSError, ValueError):
+                return {}
+
+        def toggle(self, mode, until):
+            """Override the hours until `until` (HH:MM, the next one) or the next change of hours; `auto` clears it."""
+            path = os.path.join(root, "human.json")
+            if mode == "auto":
+                if os.path.exists(path):
+                    os.remove(path)
+                return self.reply(200, availability(root, self.podium()))
+            if mode not in ("available", "unavailable"):
+                return self.reply(404, {"error": "unknown mode"})
+            now = datetime.now()
+            if until:
+                if not re.fullmatch(r"\d\d:\d\d", until):
+                    return self.reply(400, {"error": "until is HH:MM"})
+                end = datetime.combine(now.date(), datetime.strptime(until, "%H:%M").time())
+                end += timedelta(days=end <= now)
+            else:
+                hours = {**HOURS, **((self.podium().get("human") or {}).get("hours") or {})}
+                end = next_change(hours, now) or now + timedelta(days=1)
+            with open(path + ".tmp", "w") as f:
+                json.dump({"mode": mode, "until": end.astimezone().isoformat(timespec="minutes"),
+                           "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
+            os.replace(path + ".tmp", path)
+            self.reply(200, availability(root, self.podium()))
 
         def known_ids(self, action):
             """plan → milestone ids; assign → story ids of the active milestone."""

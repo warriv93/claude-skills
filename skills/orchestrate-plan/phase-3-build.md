@@ -13,7 +13,7 @@ Everything here acts on the active milestone. A story is **ready** when it is `t
 | `PROGRESS <id> … COMMITTED <sha>` | merge it (below) |
 | `PROGRESS <id> … FAILED <why>` | a failed attempt (below) |
 | `IDLE <id>`, or a subagent finished, without `COMMITTED` | a failed attempt, reason "stopped without committing" |
-| `PERMISSION <id> <tool>` | `status: "approval"`, `needsYou: {reason: "<id> waits for approval: <tool>", story}`, `approval` event |
+| `PERMISSION <id> <tool>` | available → `status: "approval"`, `needsYou: {reason: "<id> waits for approval: <tool>", story}`, `approval` event; unavailable → deny it (`respond_to_permission`) with "the user is away: find another way, or log FAILED", and record the denial as an assumption |
 | `PERMISSION-CLEARED <id>` | `status: "working"`, `needsYou: null` |
 
 With `buildAll` on, the next wave starts when every story of the current wave is merged.
@@ -50,6 +50,6 @@ On a retry, append: `Previous attempt failed: <reason>` and the last 40 lines of
 ## Failed attempt
 
 - **Attempt 1:** dispatch again in a fresh worktree with the failure in the prompt; append a `retry` event.
-- **Attempt 2:** `podium.py set <id> status=failed failure=… --event failed reason=…`, which also blocks every story that depends on it. With `buildAll` on, let the current wave finish, then set `buildAll: false` and `needsYou: {reason: "<id> failed — retry, skip or fix by hand?", story}` and ask the user in the terminal.
+- **Attempt 2:** `podium.py set <id> status=failed failure=… --event failed reason=…`, which also blocks every story that depends on it. Set `needsYou: {reason: "<id> failed — retry, skip or fix by hand?", story}`. Available → with `buildAll` on, let the current wave finish, set `buildAll: false` and ask the user in the terminal. Unavailable → keep building every story it doesn't block, and ask on `HUMAN available`.
 
 Done when every story is `done`, or a failure has stopped the run and the user has been asked.

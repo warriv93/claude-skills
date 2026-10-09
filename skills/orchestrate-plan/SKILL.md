@@ -21,6 +21,7 @@ deep-plan's ledger and files stay deep-plan's. This skill adds:
 | `podium.json` | the orchestrator (this session) |
 | `events.jsonl` | the orchestrator, append-only |
 | `requests.jsonl` | the Podium server, append-only |
+| `human.json` | the Podium server, from its availability toggle |
 | `stories/<milestone>/<id>.md` — the story's **brief** | the orchestrator, at breakdown |
 | `stories/<milestone>/<id>.progress` | that story's agent, append-only |
 
@@ -41,9 +42,18 @@ deep-plan's ledger and files stay deep-plan's. This skill adds:
 
 ## Podium
 
-- **Start:** run `python3 <this skill>/podium/server.py --dir .deep-plan` in the background. It prints its URL (port 8765, or the next free one). Record `podium: <url>` in the ledger and give the user the link. **Open it in Paseo's browser** when its MCP tools are available: `browser_list_tabs`; a tab already on the URL → leave it; otherwise `browser_new_tab` with the URL, then check its title with `browser_evaluate`. A `browser_timeout` can still open the tab, so list the tabs again before retrying. A tab whose title isn't the Podium's (Paseo's agent-opened tabs can fail to reach local servers) → `browser_close_tab` it. No working tab, or no Paseo → `open <url>`.
+- **Start:** run `python3 <this skill>/podium/server.py --dir .deep-plan` in the background. It prints its URL (port 8765, or the next free one). Record `podium: <url>` in the ledger and give the user the link: the URL in your reply, with a sentence on what it shows (the pipeline stepper; the epic, milestone and story maps with live status; the activity feed; the buttons to plan a milestone, assign stories or build all; the Available/Away toggle). **Open it in Paseo's browser** when its MCP tools are available: `browser_list_tabs`; a tab already on the URL → leave it; otherwise `browser_new_tab` with the URL, then check its title with `browser_evaluate`. A `browser_timeout` can still open the tab, so list the tabs again before retrying. A tab whose title isn't the Podium's (Paseo's agent-opened tabs can fail to reach local servers) → `browser_close_tab` it. No working tab, or no Paseo → the link is enough.
 - **Resume:** `curl -s <url>/info`; no answer → start it again.
 - **Watch:** run `python3 <this skill>/podium/watch.py --dir .deep-plan` (add `--paseo <paseo binary>` when Paseo dispatches) under `Monitor`. Each line it prints is an event to act on; [phase-3-build.md](phase-3-build.md) says how.
+
+## The human
+
+The user is **available** or **unavailable**; `podium.py human` says which and until when. Their hours decide (`human.hours` in `podium.json`, `{days: "Mon-Fri", from: "07:00", to: "17:00"}` by default, local time) unless the Podium's toggle overrides them until the next change of hours. The user says in the terminal they're leaving or back → flip the toggle for them: `curl -s -X POST <podium>/human/<unavailable|available|auto>`, plus `?until=HH:MM` for another end. The watcher prints `HUMAN <mode>` on every flip; append a `human` event (`set . --event human mode=<mode>`).
+
+- **Available:** ask as each phase says.
+- **Unavailable:** keep the run moving on your own judgement. Every question a phase or deep-plan would put to the user, sign-off gates and the grill included, becomes an **assumption**: take the option you'd recommend, record it with `podium.py assume "<question>" "<choice>" "<why>" [--story <id>]`, and carry on. Skip a context reset deep-plan would ask for.
+- **Waits for the user either way:** anything that leaves the machine or can't be undone (push, PR, landing, deleting). Set `needsYou` for it and go on with the work that doesn't depend on it; when none is left, wait for `HUMAN available`.
+- **`HUMAN available`:** put the open assumptions (`podium.py assumptions`) to the user in `AskUserQuestion` rounds, your choice as the recommended option. Settle each with `set . assumptions.<n>.status=<confirmed|reversed> --event settled question=… status=…`. A reversal is rework: amend the planning file it touched, and send a story it shaped back to `todo` with the answer in its brief.
 
 ## Dispatcher
 

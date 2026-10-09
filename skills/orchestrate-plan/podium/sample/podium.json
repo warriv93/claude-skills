@@ -576,6 +576,32 @@
     "reason": "S8 wants to run a migration against the test database",
     "story": "S8"
   },
+  "human": {
+    "hours": {
+      "days": "Mon-Fri",
+      "from": "07:00",
+      "to": "17:00"
+    }
+  },
+  "assumptions": [
+    {
+      "at": "2026-10-08T18:20:00+00:00",
+      "milestone": "M2",
+      "story": "S6",
+      "question": "Invite links expire after?",
+      "choice": "7 days",
+      "why": "matches the password-reset links in the reuse list",
+      "status": "open"
+    },
+    {
+      "at": "2026-10-08T18:05:00+00:00",
+      "milestone": "M2",
+      "question": "Resend an invite to an address that already has one pending?",
+      "choice": "Replace the old invite",
+      "why": "one live link per address keeps revocation simple",
+      "status": "confirmed"
+    }
+  ],
   "buildAll": false,
   "dispatcher": "paseo",
   "repoUrl": "https://github.com/example/acme",

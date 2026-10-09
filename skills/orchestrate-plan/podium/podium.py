@@ -21,7 +21,8 @@ COMMANDS
     set <target> [key=value ...] [--event TYPE [key=value ...]]
         value is JSON when it parses, else a string; `now` is the current ISO
         time, `@file` reads JSON from a file. Dotted keys reach into objects
-        (agent.id=x). key+=value appends to a list or adds to a number.
+        (agent.id=x), and a number into a list (assumptions.0.status=x).
+        key+=value appends to a list or adds to a number.
         A story set to status=failed blocks every story that depends on it,
         directly or through others. --event appends one events.jsonl line
         with `at`, `milestone` and `story` filled in from the target.
@@ -39,6 +40,20 @@ COMMANDS
           MERGED <id> <n> commits; ready: <ids>   story done, commits recorded
           CONFLICT <id> <n>                        merge aborted; n = conflicts so far
           RED <id> <cmd> + the log's last 40 lines merge undone (reset --hard ORIG_HEAD)
+    human
+        Whether the user is available or unavailable, until when, and why:
+        their hours (podium.json human.hours, default Mon-Fri 07:00-17:00
+        local time) or the Podium's toggle (human.json, written by the server,
+        holding until the next change of hours). Change it through the Podium:
+        its toggle, or `curl -s -X POST <podium>/human/<available|unavailable|auto>`
+        (`?until=HH:MM` for another end).
+    assume <question> <choice> <why> [--story ID]
+        Record an assumption made while the user is unavailable: appends
+        {at, milestone, story, question, choice, why, status: open} to the
+        project's assumptions and an `assumed` event.
+    assumptions
+        The open assumptions, numbered by their index in the list
+        (settle one with `set . assumptions.<n>.status=confirmed|reversed`).
     backfill
         Rebuild the planned, commit and landed lines of events.jsonl from the
         milestones' commits, brief dates and landedSha, keep every other line,
@@ -50,11 +65,13 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
 
 NOW = lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
 UTC = lambda epoch: datetime.fromtimestamp(int(epoch), timezone.utc).isoformat()
 GENERATED = {"planned", "commit", "landed"}
+DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+HOURS = {"days": "Mon-Fri", "from": "07:00", "to": "17:00"}
 
 
 class Podium:
@@ -134,6 +151,61 @@ class Podium:
         return r
 
 
+# --- the human ----------------------------------------------------------------
+def day_set(spec):
+    """'Mon-Fri' or 'Mon,Wed,Fri-Sun' → weekday numbers (Mon = 0)."""
+    out = set()
+    for part in spec.split(","):
+        a, _, b = part.strip().partition("-")
+        i, j = DAYS.index(a), DAYS.index(b or a)
+        out |= {d % 7 for d in range(i, j + 1 if j >= i else j + 8)}
+    return out
+
+
+def in_hours(hours, t):
+    return t.weekday() in day_set(hours["days"]) and hours["from"] <= t.strftime("%H:%M") < hours["to"]
+
+
+def next_change(hours, t):
+    """The first local time after t at which the hours start or end, or None."""
+    now = in_hours(hours, t)
+    for d in range(8):
+        day = (t + timedelta(days=d)).date()
+        for hm in sorted((hours["from"], hours["to"])):
+            c = datetime.combine(day, time.fromisoformat(hm))
+            if c > t and in_hours(hours, c) != now:
+                return c
+    return None
+
+
+def local(iso):
+    return datetime.fromisoformat(iso).astimezone().replace(tzinfo=None)
+
+
+def availability(root, data, t=None):
+    """{mode, until, source, hours}: mode `available` or `unavailable`, until a local ISO time or None,
+    source `toggle` while human.json's override holds, else `hours`. Times are naive local."""
+    t = t or datetime.now()
+    hours = {**HOURS, **((data.get("human") or {}).get("hours") or {})}
+    try:
+        with open(os.path.join(root, "human.json")) as f:
+            o = json.load(f)
+    except (OSError, ValueError):
+        o = None
+    if o and o.get("mode") in ("available", "unavailable") and o.get("until") and local(o["until"]) > t:
+        return {"mode": o["mode"], "until": local(o["until"]).isoformat(timespec="minutes"), "source": "toggle", "hours": hours}
+    nxt = next_change(hours, t)
+    return {"mode": "available" if in_hours(hours, t) else "unavailable",
+            "until": nxt and nxt.isoformat(timespec="minutes"), "source": "hours", "hours": hours}
+
+
+def human_line(a):
+    until = datetime.fromisoformat(a["until"]).strftime("%a %H:%M") if a["until"] else "further notice"
+    h = a["hours"]
+    why = "Podium toggle; " if a["source"] == "toggle" else ""
+    return f"{a['mode']} until {until} ({why}hours {h['days']} {h['from']}-{h['to']})"
+
+
 # --- values -------------------------------------------------------------------
 def parse_value(raw):
     if raw == "now":
@@ -155,7 +227,9 @@ def assign(obj, item):
     key = key.rstrip("+")
     *path, last = key.split(".")
     for k in path:
-        obj = obj.setdefault(k, {})
+        obj = obj[int(k)] if isinstance(obj, list) else obj.setdefault(k, {})
+    if isinstance(obj, list):
+        sys.exit(f"{key}: set a field of the item (key.<n>.field=value)")
     value = parse_value(raw)
     if op == "+=":
         cur = obj.get(last)
@@ -182,8 +256,12 @@ def cmd_status(p, args):
     act = d.get("active") or {}
     print(f"{(d.get('project') or {}).get('title', '?')} · active {act.get('epic', '-')}/{act.get('milestone', '-')}"
           f" · buildAll {d.get('buildAll', False)} · dispatcher {d.get('dispatcher', '-')}")
+    print(f"human: {human_line(availability(p.root, d))}")
     if d.get("needsYou"):
         print(f"needsYou: {json.dumps(d['needsYou'], ensure_ascii=False)}")
+    open_ = [a for a in d.get("assumptions", []) if a.get("status") == "open"]
+    if open_:
+        print(f"assumptions: {len(open_)} open")
     for e in p.epics():
         ms = e.get("milestones", [])
         counts = {}
@@ -321,6 +399,31 @@ def cmd_merge(p, args):
     print(f"MERGED {s['id']} {len(commits)} commits; ready: {' '.join(p.ready(m)) or '-'}")
 
 
+def cmd_human(p, _):
+    print(human_line(availability(p.root, p.data)))
+
+
+def cmd_assume(p, args):
+    story = args[args.index("--story") + 1] if "--story" in args else None
+    rest = [a for a in args if a not in ("--story", story)]
+    if len(rest) != 3:
+        sys.exit("assume <question> <choice> <why> [--story ID]")
+    question, choice, why = rest
+    mid = (p.data.get("active") or {}).get("milestone")
+    a = {"at": NOW(), "milestone": mid, "story": story, "question": question, "choice": choice, "why": why, "status": "open"}
+    p.data.setdefault("assumptions", []).append({k: v for k, v in a.items() if v is not None})
+    p.event("assumed", mid, story, question=question, choice=choice)
+    p.save()
+    print(f"assumption {len(p.data['assumptions']) - 1}")
+
+
+def cmd_assumptions(p, _):
+    for i, a in enumerate(p.data.get("assumptions", [])):
+        if a.get("status") == "open":
+            where = "/".join(x for x in (a.get("milestone"), a.get("story")) if x)
+            print(f"{i} [{where}] {a['question']} → {a['choice']} ({a['why']})")
+
+
 def cmd_backfill(p, _):
     events_path = os.path.join(p.root, "events.jsonl")
     kept = []
@@ -369,7 +472,8 @@ def cmd_backfill(p, _):
 
 
 COMMANDS = {"status": cmd_status, "get": cmd_get, "set": cmd_set, "ready": cmd_ready,
-            "commits": cmd_commits, "merge": cmd_merge, "backfill": cmd_backfill}
+            "commits": cmd_commits, "merge": cmd_merge, "human": cmd_human, "assume": cmd_assume,
+            "assumptions": cmd_assumptions, "backfill": cmd_backfill}
 
 
 def main(argv):

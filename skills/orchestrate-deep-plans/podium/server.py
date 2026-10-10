@@ -29,7 +29,9 @@ hand-off) answer 409 while no watcher is running (watcher.json older than
 
 The availability toggle writes `human.json` (this server is its only writer):
 POST /human/<available|mobile|unavailable|auto>[?until=HH:MM]. GET /human returns
-podium.py's reading of the user's availability.
+podium.py's reading of the user's availability. A Podium tab in use while the
+toggle says mobile means the user is at a computer: after 15 minutes of
+Mobile, it turns the toggle to available.
 
 It stops itself after --idle minutes (default 60, 0 = never) without
 activity: a Podium tab in view and used in the last 10 minutes (its polls carry X-Podium-Visible), a button,
@@ -149,6 +151,15 @@ def handoffs(root):
         return {}
 
 
+def write_toggle(root, mode, end):
+    """human.json, the availability override, until `end` (naive local)."""
+    path = os.path.join(podium_dir(root), "human.json")
+    with open(path + ".tmp", "w") as f:
+        json.dump({"mode": mode, "until": end.astimezone().isoformat(timespec="minutes"),
+                   "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
+    os.replace(path + ".tmp", path)
+
+
 # Each repo's distance from origin, refreshed by watch_git; GET /git serves it.
 GIT = {"repos": [], "at": None}
 
@@ -223,7 +234,25 @@ def make_handler(root):
             ok = super().parse_request()
             if ok and (self.command != "GET" or self.headers.get("X-Podium-Visible") == "1"):
                 SEEN.update(at=time.time(), by=f"{self.command} {self.path.split('?')[0]} from {self.headers.get('User-Agent', '?')[:60]}")
+                if not self.path.startswith("/human/"):
+                    self.at_desk()
             return ok
+
+        def at_desk(self):
+            """Someone using a Podium tab is at a computer (the server answers 127.0.0.1 only), so Mobile
+            turns to Available, once Mobile has held 15 minutes: setting it from the desk on the way out
+            outlasts the tab's last 10 minutes of use."""
+            try:
+                with open(os.path.join(podium_dir(root), "human.json")) as f:
+                    since = datetime.fromisoformat(json.load(f).get("at") or "")
+            except (OSError, ValueError, TypeError):
+                return
+            data = self.podium()
+            if availability(root, data)["mode"] != "mobile" or datetime.now(timezone.utc) - since < timedelta(minutes=15):
+                return
+            hours = {**HOURS, **((data.get("human") or {}).get("hours") or {})}
+            now = datetime.now()
+            write_toggle(root, "available", next_change(hours, now) or now + timedelta(days=1))
 
         def log_message(self, *_):
             pass
@@ -367,10 +396,7 @@ def make_handler(root):
             else:
                 hours = {**HOURS, **((self.podium().get("human") or {}).get("hours") or {})}
                 end = next_change(hours, now) or now + timedelta(days=1)
-            with open(path + ".tmp", "w") as f:
-                json.dump({"mode": mode, "until": end.astimezone().isoformat(timespec="minutes"),
-                           "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
-            os.replace(path + ".tmp", path)
+            write_toggle(root, mode, end)
             self.reply(200, availability(root, self.podium()))
 
         def link_asana(self, epic, link):

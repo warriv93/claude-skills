@@ -33,7 +33,7 @@ Start every turn by reading the ledger and resuming from it; create it if missin
 `.deep-plan/podium/podium.json` exists → `/orchestrate-deep-plans` owns this run:
 
 - Change `podium.json` and `events.jsonl` only through `python3 <this skill>/../orchestrate-deep-plans/podium/podium.py`. At every checkpoint: `set milestone: phase=<phase> artifacts+=<{name, path, phase}> --event phase phase=<phase>`, one `artifacts+=` per new planning file.
-- Before every question to the user and every sign-off gate, run `podium.py human`. Unavailable → orchestrate-deep-plans' rule for an unavailable user (its SKILL.md, The human) replaces asking.
+- Before every question to the user and every sign-off gate, run `podium.py human`. Unavailable or mobile → orchestrate-deep-plans' rule for that mode (its SKILL.md, The human) replaces or trims asking.
 - While a sign-off gate waits on the user, `set . needsYou=<{reason}>`; `set . needsYou=null` on sign-off.
 - Wherever a phase asks the user to re-invoke `/deep-plan`, name `/orchestrate-deep-plans` instead.
 - After Phase 2's checkpoint, return to `/orchestrate-deep-plans`. It builds the slices as stories and re-enters Phase 3 at its quality gate.

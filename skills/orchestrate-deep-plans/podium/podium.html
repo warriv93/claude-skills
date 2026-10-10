@@ -82,8 +82,11 @@ code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:
 .human { display: inline-flex; align-items: center; gap: 2px; background: var(--gray-soft); border-radius: 999px; padding: 2px; font-size: 12px; white-space: nowrap; }
 .human button { border: 0; background: transparent; border-radius: 999px; padding: 4px 10px; cursor: pointer; color: var(--text-2); display: inline-flex; align-items: center; gap: 6px; }
 .human .state { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
-.human .state i { width: 7px; height: 7px; border-radius: 50%; background: var(--green-dot); }
-.human.away .state i { background: var(--text-3); }
+.human button i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); opacity: .45; }
+.human .state i { opacity: 1; }
+.human .available i { background: var(--green-dot); }
+.human .mobile i { background: var(--accent); }
+.human .unavailable i { background: var(--text-3); }
 .human .until { font-weight: 400; color: var(--text-2); }
 @media (max-width: 720px) { .human .until, .human .flip { display: none; } }
 .icon-btn { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 13px; display: none; }
@@ -924,8 +927,9 @@ function renderHuman() {
   const end = until ? (sameDay ? "" : until.toLocaleDateString([], { weekday: "short" }) + " ") + until.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
   el.classList.toggle("away", !on);
   el.title = `Hours ${h.hours.days} ${h.hours.from}–${h.hours.to}. Away, the orchestrator keeps going on its own and records each decision for you to review.`;
-  el.innerHTML = `<button class="state" data-act="human" data-id="${on ? "unavailable" : "available"}"><i></i>${on ? "Available" : "Away"}${end ? `<span class="until">until ${esc(end)}</span>` : ""}</button>`
-    + `<button class="flip" data-act="human" data-id="${h.source === "toggle" ? "auto" : on ? "unavailable" : "available"}">${h.source === "toggle" ? "Use hours" : on ? "Go away" : "I'm here"}</button>`;
+  const states = [["available", "Available", "At your desk: the orchestrator asks you its questions"], ["mobile", "Mobile", "On your phone: questions only when they block, pictures instead of Podium links"], ["unavailable", "Away", "The orchestrator decides on its own and records each decision for you"]];
+  el.innerHTML = states.map(([m, label, tip]) => `<button class="${h.mode === m ? "state" : ""} ${m}" data-act="human" data-id="${m}" title="${tip}"><i></i>${label}${h.mode === m && end ? `<span class="until">until ${esc(end)}</span>` : ""}</button>`).join("")
+    + (h.source === "toggle" ? `<button class="flip" data-act="human" data-id="auto">Use hours</button>` : "");
 }
 /* decisions the orchestrator took while the user was away, until they review them */
 function assumedBanner() {
@@ -1196,7 +1200,7 @@ const EV = {
   finding: ["⚑", "amber", (e) => `${msLink(e.milestone)}Gate finding: ${esc(e.text || "")}`],
   needs: ["?", "amber", (e) => `${msLink(e.milestone)}Needs you: ${esc(e.reason || e.text || "a decision")}`],
   request: ["⌘", "", (e) => `Podium: ${esc(e.text || "")}`],
-  human: ["◐", "", (e) => e.mode === "available" ? "You're available — open decisions go to you" : "You're away — the orchestrator decides on its own"],
+  human: ["◐", "", (e) => e.mode === "available" ? "You're available — open decisions go to you" : e.mode === "mobile" ? "You're on mobile — only blocking questions, with pictures" : "You're away — the orchestrator decides on its own"],
   assumed: ["◇", "blue", (e) => `${link(e)} Decided: ${esc(e.question || "")} → <b>${esc(e.choice || "")}</b>`],
   denied: ["⊘", "amber", (e) => `${link(e)} permission denied while you're away: ${esc(e.tool || "")} — finding another way`],
   pr: ["⇡", "blue", (e) => `${msLink(e.milestone)}PR <a href="${esc(e.url || "")}" target="_blank" rel="noopener">#${esc(e.number)}</a> ${esc(e.state || "")}${e.was ? ` <span class="meta">was ${esc(e.was)}</span>` : ""}`],
@@ -1638,7 +1642,7 @@ async function act(action, id) {
     const r = await fetch(path, { method: "POST" });
     if (r.status === 409) return toast(NO_ORCHESTRATOR());
     if (!r.ok) throw new Error(r.status);
-    if (action === "human") { S.human = await r.json(); renderHuman(); return toast({ available: "You're available — the orchestrator brings its questions to you", unavailable: "You're away — the orchestrator keeps going and records its decisions", auto: "Back on your hours" }[id]); }
+    if (action === "human") { S.human = await r.json(); renderHuman(); return toast({ available: "You're available — the orchestrator brings its questions to you", mobile: "On mobile — questions only when they block, pictures instead of Podium links", unavailable: "You're away — the orchestrator keeps going and records its decisions", auto: "Back on your hours" }[id]); }
     toast({ assign: `Queued ${id} — the orchestrator picks it up next`, plan: `Planning ${id} — answer its questions in the orchestrator's chat`, "build-all": "Build all queued — wave by wave", stop: "Stopping after this wave" }[action]);
   } catch {
     toast("The Podium server didn't accept the request — is server.py running?");

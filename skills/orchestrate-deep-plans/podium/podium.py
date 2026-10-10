@@ -211,7 +211,8 @@ def local(iso):
 
 
 def availability(root, data, t=None):
-    """{mode, until, source, hours}: mode `available` or `unavailable`, until a local ISO time or None,
+    """{mode, until, source, hours}: mode `available`, `mobile` (reachable in chat on a phone, no
+    localhost) or `unavailable`, until a local ISO time or None,
     source `toggle` while human.json's override holds, else `hours`. Times are naive local."""
     t = t or datetime.now()
     hours = {**HOURS, **((data.get("human") or {}).get("hours") or {})}
@@ -220,7 +221,7 @@ def availability(root, data, t=None):
             o = json.load(f)
     except (OSError, ValueError):
         o = None
-    if o and o.get("mode") in ("available", "unavailable") and o.get("until") and local(o["until"]) > t:
+    if o and o.get("mode") in ("available", "mobile", "unavailable") and o.get("until") and local(o["until"]) > t:
         return {"mode": o["mode"], "until": local(o["until"]).isoformat(timespec="minutes"), "source": "toggle", "hours": hours}
     nxt = next_change(hours, t)
     return {"mode": "available" if in_hours(hours, t) else "unavailable",

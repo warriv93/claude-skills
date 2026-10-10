@@ -28,7 +28,7 @@ hand-off) answer 409 while no watcher is running (watcher.json older than
 30 s): nothing would read the request. GET /info says `watching`.
 
 The availability toggle writes `human.json` (this server is its only writer):
-POST /human/<available|unavailable|auto>[?until=HH:MM]. GET /human returns
+POST /human/<available|mobile|unavailable|auto>[?until=HH:MM]. GET /human returns
 podium.py's reading of the user's availability.
 
 It stops itself after --idle minutes (default 60, 0 = never) without
@@ -356,7 +356,7 @@ def make_handler(root):
                 if os.path.exists(path):
                     os.remove(path)
                 return self.reply(200, availability(root, self.podium()))
-            if mode not in ("available", "unavailable"):
+            if mode not in ("available", "mobile", "unavailable"):
                 return self.reply(404, {"error": "unknown mode"})
             now = datetime.now()
             if until:

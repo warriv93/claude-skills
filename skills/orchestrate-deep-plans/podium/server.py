@@ -17,6 +17,12 @@ session: it records the story in `handoffs.json` (this server is its only
 writer), so the orchestrator leaves it alone, and returns its prompt.
 DELETE /handoff/<story> takes it back.
 
+POST /asana[/<epic>]?url=<Asana link> queues a link of an Asana project or
+task (or of an epic to its task) as an `asana` request, like settling an
+assumption kept for the next orchestrator run, so it needs no watcher.
+POST /asana-done/<milestone>?choice=<drop|keep> queues the user's answer for a
+milestone completed in Asana but not landed here, the same way.
+
 The buttons that need the orchestrator (assign, plan, build-all, stop, a
 hand-off) answer 409 while no watcher is running (watcher.json older than
 30 s): nothing would read the request. GET /info says `watching`.
@@ -64,6 +70,9 @@ ACTIONS = {"assign", "plan", "build-all", "stop", "confirm", "reverse"}
 ID_ACTIONS = {"assign", "plan", "confirm", "reverse"}  # these take an id
 # The user settling an assumption: an answer, kept until an orchestrator runs, so it needs no watcher.
 SETTLE = {"confirm", "reverse"}
+# Linking Asana is the user's own request too: queued for the orchestrator, watcher or not.
+QUEUED = SETTLE | {"asana", "asana-done"}
+ASANA_URL = re.compile(r"^https://app\.asana\.com/[\w/?=&.-]{1,300}$")
 
 
 def load_run(root):
@@ -265,7 +274,7 @@ def make_handler(root):
         def do_POST(self):
             url = urlparse(self.path)
             first = ([p for p in url.path.split("/") if p] or [""])[0]
-            if not url.path.startswith("/human/") and first not in SETTLE and not watching(root):
+            if not url.path.startswith("/human/") and first not in QUEUED and not watching(root):
                 return self.reply(409, {"error": "no orchestrator is watching"})
             if url.path.startswith("/handoff/"):
                 return self.handoff(url.path[len("/handoff/"):], take=True)
@@ -273,6 +282,10 @@ def make_handler(root):
                 return self.toggle(url.path[len("/human/"):], parse_qs(url.query).get("until", [None])[0])
             parts = [p for p in url.path.split("/") if p]
             action = parts[0] if parts else ""
+            if action == "asana":
+                return self.link_asana(parts[1] if len(parts) > 1 else None, parse_qs(url.query).get("url", [""])[0].strip())
+            if action == "asana-done":
+                return self.asana_done(parts[1] if len(parts) > 1 else "", parse_qs(url.query).get("choice", [""])[0])
             story = parts[1] if len(parts) > 1 else None
             if action not in ACTIONS or (action in ID_ACTIONS) != (story is not None):
                 return self.reply(404, {"error": "unknown action"})
@@ -359,6 +372,37 @@ def make_handler(root):
                            "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f)
             os.replace(path + ".tmp", path)
             self.reply(200, availability(root, self.podium()))
+
+        def link_asana(self, epic, link):
+            """POST /asana[/<epic>]?url=<Asana link>: queue a link for the orchestrator to map
+            (an epic id links that epic to a task; none links a project or a task as a new epic)."""
+            if not ASANA_URL.match(link):
+                return self.reply(400, {"error": "not an Asana link"})
+            if epic is not None:
+                try:
+                    with open(os.path.join(podium_dir(root), "podium.json")) as f:
+                        epics = {e.get("id") for e in json.load(f).get("epics", [])}
+                except (OSError, ValueError):
+                    epics = set()
+                if not STORY_ID.match(epic) or epic not in epics:
+                    return self.reply(404, {"error": "unknown epic"})
+            line = {"action": "asana", "story": epic, "note": link,
+                    "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            with open(os.path.join(podium_dir(root), "requests.jsonl"), "a") as f:
+                f.write(json.dumps(line) + "\n")
+            self.reply(202, {"queued": line})
+
+        def asana_done(self, mid, choice):
+            """POST /asana-done/<milestone>?choice=<drop|keep>: the user's answer for a milestone
+            completed in Asana but not landed here (skip building it, or keep it)."""
+            milestones, _ = load_run(root)
+            if choice not in ("drop", "keep") or mid not in {m.get("id") for m in milestones}:
+                return self.reply(404, {"error": "unknown milestone or choice"})
+            line = {"action": "asana-done", "story": mid, "note": choice,
+                    "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            with open(os.path.join(podium_dir(root), "requests.jsonl"), "a") as f:
+                f.write(json.dumps(line) + "\n")
+            self.reply(202, {"queued": line})
 
         def known_ids(self, action):
             """plan → milestone ids; assign → story ids of the active milestone; confirm and

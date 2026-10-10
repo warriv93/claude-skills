@@ -287,6 +287,23 @@ a.wchip { color: inherit; text-decoration: none; }
 .trow.wave .tbar { height: 5px; }
 .trow.wave .tbar i { background: var(--green-dot); opacity: .7; }
 
+.asanabtn { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; padding: 2px 9px 2px 7px; border-radius: 999px; background: rgba(240,106,106,.12); color: #e8384f; border: 1px solid rgba(232,56,79,.55); font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.asanabtn:hover { background: #e8384f; color: #fff; }
+.asanabtn.off { background: var(--amber-soft); color: var(--amber); border-color: var(--amber-dot); cursor: pointer; font-family: inherit; }
+.asana-ask .settle { display: flex; gap: 6px; align-items: center; }
+.asana-ask .settled { font-size: 12px; font-weight: 600; color: var(--green); }
+.asana-ask .settled.reverse { color: var(--amber); }
+.asanabtn.off:hover { background: var(--amber-dot); color: #fff; }
+.node .asanabtn { margin-left: 4px; padding: 1px 7px 1px 5px; font-size: 11px; }
+.page-title h1 .asanabtn { margin-left: 8px; font-size: 13px; padding: 3px 11px 3px 8px; }
+.ecard .epic-row .asanabtn { margin-left: auto; }
+.ecard .epic-row .asanabtn + .mockbtn { margin-left: 6px; }
+.asana-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.achip { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; background: var(--gray-soft); color: var(--text-2); white-space: nowrap; }
+.achip .k { color: var(--text-3); }
+.btn.linkasana { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; vertical-align: middle; }
+.page-title > .linkasana { margin: 8px 0 0; }
+
 /* ---------- quality ---------- */
 .quality > summary { list-style: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-weight: 600; }
 .quality > summary::-webkit-details-marker { display: none; }
@@ -627,6 +644,7 @@ async function poll() {
       if (rq !== S.requestsRaw) {
         S.requestsRaw = rq;
         S.settling = Object.fromEntries(parseJsonl(rq).filter((r) => ["confirm", "reverse"].includes(r.action)).map((r) => [String(r.story), r.action]));
+        S.asanaChoice = Object.fromEntries(parseJsonl(rq).filter((r) => r.action === "asana-done").map((r) => [String(r.story), r.note]));
         changed = true;
       }
     } catch { /* no requests yet */ }
@@ -783,6 +801,7 @@ function renderProject() {
   }
   $("q").placeholder = "Search epics and milestones";
   setHeading([["", "All epics", null]], "", "", `${P.epics.length} epics · each is a product brief or a theme; open one to see its milestones`);
+  $("page-title").insertAdjacentHTML("beforeend", P.project.asana?.url ? `<div class="sub">${asanaBtn(P.project)}${asanaMeta(P.project)}</div>` : linkBtn(""));
   $("quality").hidden = true;
   const m = $("map");
   m.style.width = ""; m.style.height = ""; m.style.zoom = 1;
@@ -831,8 +850,8 @@ function epicCard({ E, last, on }) {
     done: `<span class="badge done">Completed</span>`, planned: `<span class="badge draft">Up next</span>` }[st];
   return `<div class="ecard ${wt ? "waits" : st}" data-epic="${esc(E.id)}" tabindex="0">
     <div class="top">${badge}<span class="when">${esc(last)}</span></div>
-    <h3>${esc(E.title)}</h3><p>${esc(E.summary || "")}</p>
-    <div class="epic-row">${ring(ms.length ? done / ms.length : 0)}<div class="epic-stat"><b>${done}</b> of ${ms.length} milestones landed<br>${stories} stories</div>${mockBtn(E)}</div></div>`;
+    <h3>${esc(E.title)}</h3><p>${esc(E.summary || "")}</p>${asanaMeta(E)}
+    <div class="epic-row">${ring(ms.length ? done / ms.length : 0)}<div class="epic-stat"><b>${done}</b> of ${ms.length} milestones landed<br>${stories} stories</div>${asanaBtn(E)}${mockBtn(E)}</div></div>`;
 }
 
 /* the stepper follows the milestone being planned or built */
@@ -998,7 +1017,7 @@ function renderMap() {
   else setHeading([...all, epicCrumb(true), ["Milestone", `${esc(vm.id)} · ${esc(vm.title)}`, null]], `Milestone ${esc(vm.id)}`, esc(vm.title),
     kind === "artifact" ? `${esc(phaseLabel(vm.phase))} · its planning documents so far`
       : `${stories.length} stories · ${vm.status === "done" ? `landed${vm.shippedAt ? ` ${esc(vm.shippedAt)}` : ""}` : `${msWaits(vm) ? "Waiting on you · " : ""}${msDoing(vm)}`} · ${storyHint}`);
-  $("page-title").querySelector("h1")?.insertAdjacentHTML("beforeend", (vm && mockBtn(vm)) || mockBtn(e.epic));
+  $("page-title").querySelector("h1")?.insertAdjacentHTML("beforeend", ((vm && mockBtn(vm)) || mockBtn(e.epic)) + (vm ? asanaBtn(vm) : asanaBtn(e.epic) || linkBtn(e.epic.id)));
   const L = layout(list);
   const map = Object.fromEntries(list.map((s) => [s.id, s]));
   const edges = [];
@@ -1071,7 +1090,7 @@ function milestoneNode(m, p, map) {
   else if (st === "ready") foot = `<span class="badge ready">Ready</span><button class="btn" data-act="plan" data-id="${esc(m.id)}">Plan milestone</button>${copyBtn("plan", m.id)}`;
   else foot = `<span class="badge waiting">Waiting on ${esc((m.deps || []).filter((d) => map[d]?.status !== "done").join(", "))}</span>`;
   return `<div class="node ms ${st === "working" && msWaits(m) ? "waits" : st} ${S.selected === m.id ? "sel" : ""}" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" ${stories.length ? `data-drill="${esc(m.id)}"` : `data-open="${esc(m.id)}"`} data-id="${esc(m.id)}" tabindex="0">
-    <div class="top"><span class="sid">${esc(m.id)}</span>${mockBtn(m)}<span class="model">${stories.length ? `${done}/${stories.length} stories ›` : ""}</span></div>
+    <div class="top"><span class="sid">${esc(m.id)}</span>${mockBtn(m)}${asanaBtn(m, true)}<span class="model">${stories.length ? `${done}/${stories.length} stories ›` : ""}</span></div>
     <span class="title">${esc(m.title)}</span>
     <div class="foot">${foot}</div></div>`;
 }
@@ -1274,6 +1293,7 @@ function attention() {
     if (s.status === "failed") out.push([`f:${m.id}/${s.id}`, `${m.id} · ${s.id} failed`, "red"]);
     if (s.status === "approval") out.push([`p:${m.id}/${s.id}`, `${m.id} · ${s.id} waits for approval`, "amber"]);
   })));
+  P.epics.forEach((E) => (E.milestones || []).forEach((m) => { if (asanaOff(m) && !S.asanaChoice?.[m.id]) out.push([`asana:${m.id}`, `${m.id} is done in Asana: skip building it?`, "amber"]); }));
   return out;
 }
 /* the favicon is the header logo, so the two never drift; a dot when something waits on the user */
@@ -1350,6 +1370,59 @@ function renderGit() {
   if (!bad.length) return;
   el.textContent = "⚠ " + bad.map((r) => `${repos.length > 1 ? `${r.name}: ` : ""}${[r.behind && `${r.branch} ${r.behind}`, r.baseBehind && `${r.base} ${r.baseBehind}`].filter(Boolean).join(", ")}`).join(" · ") + " behind origin";
   el.title = `Fetched ${clock(S.git.at)}. Work landed from another machine: pull before resuming the run, and check podium.json against what landed there.`;
+}
+
+/* ---------- Asana ---------- */
+const ASANA_ICO = `<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="4.6" fill="currentColor"/><circle cx="5.4" cy="16.4" r="4.6" fill="currentColor"/><circle cx="18.6" cy="16.4" r="4.6" fill="currentColor"/></svg>`;
+/* an epic's task or a milestone's subtask; amber when Asana has it completed but it hasn't landed here */
+/* completed in Asana, not landed here, and not yet kept by the user */
+const asanaOff = (x) => !!(x?.asana?.completed && x.status && x.status !== "done" && !x.asana.keep);
+function asanaBtn(x, compact) {
+  const a = x?.asana;
+  if (!a?.url) return "";
+  // done in Asana asks a question instead: skip building it, or keep it
+  if (asanaOff(x)) return `<button class="asanabtn off" data-asana-ask="${esc(x.id)}" title="Completed in Asana but not landed here: skip building it?">${ASANA_ICO}${compact ? "Done?" : "Done in Asana?"}</button>`;
+  return `<a class="asanabtn" href="${esc(a.url)}" target="_blank" rel="noopener" title="Open in Asana">${ASANA_ICO}Asana</a>`;
+}
+/* the question in a milestone's panel, or the answer already sent */
+function asanaAsk(m) {
+  if (!asanaOff(m)) return "";
+  const sent = S.asanaChoice?.[m.id];
+  const act = sent ? `<span class="settled ${sent === "drop" ? "reverse" : ""}">${sent === "drop" ? "Skipping it" : "Keeping it"}: the orchestrator applies it next</span>`
+    : `<button class="btn" data-asana-done="drop" data-id="${esc(m.id)}">Skip it</button><button class="btn ghost" data-asana-done="keep" data-id="${esc(m.id)}">Keep building</button>`;
+  return `<div class="sec"><div class="approvalbox asana-ask"><b>Completed in Asana</b>, but not landed here. Skip building it?<div class="muted" style="margin:4px 0 8px">Skip drops the milestone${m.status === "working" ? " and stops its running stories" : ""}; Keep building leaves the subtask as it is in Asana. <a class="prlink" href="${esc(m.asana.url)}" target="_blank" rel="noopener">Open in Asana ↗</a></div><div class="settle">${act}</div></div></div>`;
+}
+async function asanaDone(choice, id) {
+  try {
+    const r = await fetch(`/asana-done/${encodeURIComponent(id)}?choice=${choice}`, { method: "POST" });
+    if (!r.ok) throw new Error(r.status);
+    S.asanaChoice = { ...(S.asanaChoice || {}), [id]: choice };
+    render(); if (S.selected) renderSheet();
+    toast(choice === "drop" ? `${id}: skipping it` : `${id}: keeping it`);
+  } catch { toast("The Podium server didn't accept that: is server.py running?"); }
+}
+/* who owns it in Asana and its custom fields, as small chips */
+function asanaMeta(x) {
+  const a = x?.asana;
+  if (!a) return "";
+  const chips = [a.assignee && `<span class="achip">👤 ${esc(a.assignee)}</span>`,
+    ...(a.fields || []).filter((f) => f.value).map((f) => `<span class="achip"><span class="k">${esc(f.name)}</span> ${esc(f.value)}</span>`)].filter(Boolean);
+  return chips.length ? `<div class="asana-meta">${chips.join("")}</div>` : "";
+}
+const asanaRow = (x) => (x?.asana?.url ? `<dt>Asana</dt><dd>${asanaBtn(x)}${asanaMeta(x)}</dd>` : "");
+const taskOnly = () => S.info?.skill === "orchestrate-plan";
+const linkBtn = (epic) => `<button class="btn ghost linkasana" data-link-asana="${esc(epic || "")}" title="${epic ? "Link this epic to its Asana task; its subtasks become milestones" : taskOnly() ? "Link an Asana task: it becomes an epic, its subtasks milestones" : "Link an Asana project (its tasks become epics) or a task (it becomes an epic)"}">${ASANA_ICO}Link Asana</button>`;
+/* a request the orchestrator maps, asking about whatever isn't obvious (it owns podium.json) */
+async function linkAsana(epic) {
+  const what = epic ? `the Asana task for epic ${epic}` : taskOnly() ? "an Asana task" : "an Asana project or task";
+  const url = (window.prompt(`Paste the link to ${what}`, "") || "").trim();
+  if (!url) return;
+  if (!/^https:\/\/app\.asana\.com\//.test(url)) return toast("That isn't an Asana link (https://app.asana.com/…)");
+  try {
+    const r = await fetch(`/asana${epic ? `/${encodeURIComponent(epic)}` : ""}?url=${encodeURIComponent(url)}`, { method: "POST" });
+    if (!r.ok) throw new Error(r.status);
+    toast("Queued: the orchestrator maps it and asks you about anything unclear");
+  } catch { toast("The Podium server didn't accept that: is server.py running?"); }
 }
 
 /* ---------- navigation ---------- */
@@ -1447,10 +1520,12 @@ function milestoneSheet(m) {
   const q = m.quality?.gate;
   $("sheet-head").innerHTML = `<div class="top" style="display:flex;gap:8px;align-items:center"><span class="sid">${esc(m.id)}</span>${st === "working" ? `<span class="pulse${wt ? " amber" : ""}"></span>` : ""}<span class="badge ${bst}">${label}</span></div><h2>${esc(m.title)}</h2><div class="muted">${esc(m.summary || "")}</div>${actions.trim() ? `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">${actions}</div>` : ""}`;
   $("sheet-body").innerHTML = `
+    ${asanaAsk(m)}
     ${m.note ? `<div class="sec"><div class="muted">${esc(m.note)}</div></div>` : ""}
     <div class="sec"><h3>Run</h3><dl class="kv">
       <dt>Status</dt><dd>${label}${m.status === "working" ? ` · ${msDoing(m)}` : ""}</dd>
       ${((k) => (k ? `<dt>Mock</dt><dd><a class="prlink" href="${esc(k.href)}" target="_blank" rel="noopener">Open mock ↗</a>${k.url ? ` · <a class="prlink" href="${esc(k.url)}" target="_blank" rel="noopener">published ↗</a>` : ""}</dd>` : ""))(mockOf(m))}
+      ${asanaRow(m)}
       ${m.shippedAt ? `<dt>Landed</dt><dd>${esc(m.shippedAt)} · ${shaLink(m.landedSha)}</dd>` : ""}
       ${m.branch ? `<dt>Branch</dt><dd class="mono">${esc(m.branch)}</dd>` : ""}
       ${m.spec ? `<dt>Spec</dt><dd>${fileLink(m.spec, "repoDir")}</dd>` : ""}
@@ -1471,7 +1546,7 @@ function epicSheet() {
   $("sheet-body").innerHTML = `
     <div class="sec"><h3>Milestones</h3>${e.milestones.map((m) => `<div class="commit"><span class="sid">${esc(m.id)}</span><span>${m.stories?.length ? `<a data-drill="${esc(m.id)}">${esc(m.title)}</a>` : `<a data-open="${esc(m.id)}">${esc(m.title)}</a>`}</span><span class="badge ${viewStatus(m, map)}">${esc(m.status)}</span></div>`).join("")}</div>
     ${(e.uncovered || []).length ? `<div class="sec"><h3>Brief items no milestone covers yet</h3><div class="links">${e.uncovered.map((c) => `<span class="link-chip">${esc(c)}</span>`).join("")}</div></div>` : ""}
-    <div class="sec"><h3>Run</h3><dl class="kv"><dt>Active</dt><dd>${esc(e.active || "none")}</dd><dt>Dispatcher</dt><dd>${esc(e.dispatcher || "")}</dd><dt>Podium</dt><dd class="mono">${esc(location.href)}</dd></dl></div>
+    <div class="sec"><h3>Run</h3><dl class="kv">${asanaRow(e.epic)}<dt>Active</dt><dd>${esc(e.active || "none")}</dd><dt>Dispatcher</dt><dd>${esc(e.dispatcher || "")}</dd><dt>Podium</dt><dd class="mono">${esc(location.href)}</dd></dl></div>
     ${briefSec(e.epic.spec, "Brief")}`;
 }
 
@@ -1588,6 +1663,12 @@ document.addEventListener("click", (ev) => {
   if (a) { ev.stopPropagation(); if (!a.disabled) act(a.dataset.act, a.dataset.id); return; }
   const f = ev.target.closest("[data-filter]");
   if (f) { S.filter = f.dataset.filter; renderFilters(); applyFilter(); return; }
+  const aq = ev.target.closest("[data-asana-ask]");
+  if (aq) { openSheet(S.view === aq.dataset.asanaAsk ? "__root" : aq.dataset.asanaAsk); return; } // the milestone's panel holds the question
+  const ad = ev.target.closest("[data-asana-done]");
+  if (ad) { asanaDone(ad.dataset.asanaDone, ad.dataset.id); return; }
+  const la = ev.target.closest("[data-link-asana]");
+  if (la) { linkAsana(la.dataset.linkAsana || null); return; }
   if (ev.target.closest("[data-digest-done]")) { S.digestSince = null; render(); return; }
   if (ev.target.closest("[data-epics]")) { setEpic(null); return; }
   const ec = ev.target.closest("[data-epic]");

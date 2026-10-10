@@ -12,6 +12,8 @@ Everything here acts on the active milestone. A story is **ready** when it is `t
 | `REQUEST plan <id>` | append a `request` event saying `<id>` waits for the active milestone |
 | `REQUEST confirm <n>` | the user confirmed assumption `<n>` in the Podium: settle it as `confirmed` (SKILL.md, The human) |
 | `REQUEST reverse <n> [note=…]` | the user reversed it: settle it as `reversed` and do the rework, the note saying what they want instead |
+| `REQUEST asana [<epic>] note=<link>` | the user linked Asana in the Podium: map it ([asana.md](asana.md), Link) |
+| `REQUEST asana-done <milestone> note=<drop\|keep>` | the user answered "Done in Asana?": skip or keep it ([asana.md](asana.md), Refresh) |
 | `PROGRESS <id> … COMMITTED <sha>` | merge it (below) |
 | `PROGRESS <id> … FAILED <why>` | a failed attempt (below) |
 | `IDLE <id>`, or a subagent finished, without `COMMITTED` | a failed attempt, reason "stopped without committing" |

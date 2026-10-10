@@ -1,7 +1,7 @@
 ---
 name: orchestrate-deep-plans
 description: Plan a feature or product as epics with /deep-plan, break each milestone into stories, and build them in parallel, one agent per story, driven from the Podium, a live localhost dashboard; adopts a project already planned with /deep-plan. Use for "/orchestrate-deep-plans", "orchestrate this feature", a feature with several independent stories, or a half-done /deep-plan project.
-argument-hint: <feature description, or a milestone id, or nothing to adopt>
+argument-hint: <feature description, a milestone id, an Asana project or task link, or nothing to adopt>
 ---
 
 # /orchestrate-deep-plans
@@ -12,7 +12,7 @@ Outside Claude Code (Antigravity, Gemini): activate the `claude-tool-map` skill 
 
 Start every turn by syncing, then reading deep-plan's ledger (`.deep-plan/state.md`) and `podium.py status`, and resume from them. **Sync:** `git fetch`; the base branch behind its origin → fast-forward it, and any milestone that landed there since `podium.json` last saw it is recorded `done` with its stories and commits (Phase 0's steps for those runs). Say in one line what landed elsewhere. `podium.json` is untracked, so it never syncs between machines. `.deep-plan/` holds deep-plan history but no `podium/podium.json` → Phase 0.
 
-**Map first, work on a start.** A bare `/orchestrate-deep-plans` only maps: sync, adopt or reconcile `podium.json` (Phase 0 when there is none), start the Podium and the watcher, and report in one message the link, what is active, done, draft, parked and later, what waits on the user, and any requests queued in `requests.jsonl` before this session. Then end the turn. Work starts only on a **start**: a Podium request that arrives while the watcher runs (plan, assign, build all), or the user naming the work, e.g. `/orchestrate-deep-plans M2` or a feature to plan. Queued requests from before the session are listed, never acted on, except `confirm` and `reverse`: those are the user's answers to assumptions, so settle them on start. A milestone already mid-build resumes its merges and running agents, and dispatches nothing new.
+**Map first, work on a start.** A bare `/orchestrate-deep-plans` only maps: sync, adopt or reconcile `podium.json` (Phase 0 when there is none), start the Podium and the watcher, and report in one message the link, what is active, done, draft, parked and later, what waits on the user, and any requests queued in `requests.jsonl` before this session. Then end the turn. Work starts only on a **start**: a Podium request that arrives while the watcher runs (plan, assign, build all), or the user naming the work, e.g. `/orchestrate-deep-plans M2` or a feature to plan. Queued requests from before the session are listed, never acted on, except `confirm` and `reverse`, the user's answers to assumptions, and `asana` and `asana-done`, a link they asked for and their answer for a milestone done in Asana: settle, map and apply those on start. A milestone already mid-build resumes its merges and running agents, and dispatches nothing new.
 
 ## Run state — `.deep-plan/`
 
@@ -44,6 +44,7 @@ deep-plan's ledger and files stay deep-plan's. This skill keeps its own files in
 - `needsYou`: `{reason, story?}` while the run waits on the user, otherwise `null`.
 - `milestones[].pr`: `{number, url, state}` once its PR is open; `state` is `draft` `open` `merged` `closed`.
 - `mock` (an epic's or a milestone's): `{path, url}` of its UI mock. `path` is relative to the run dir, which the Podium hosts (`../` reaches the repo, hosted under `/repo/`); `url` is a published copy, such as a claude.ai artifact. A milestone artifact with `phase: "mock"` counts as its mock. The Podium shows a 🎨 link on the card, the page title and the sheet.
+- `asana` (the project's, an epic's or a milestone's): the Asana project, task or subtask it is linked to, shaped as in [asana.md](asana.md). The Podium shows an Asana link, the assignee and custom fields, and asks whether to skip a milestone whose subtask is done in Asana but hasn't landed.
 - Progress lines: `<ISO time> <STAGE> <note>`, STAGE one of `STARTED` `RED` `GREEN` `REFACTOR` `CONTRACT` `COMMITTED` `FAILED`.
 
 ## Podium
@@ -61,6 +62,10 @@ The user is **available** or **unavailable**; `podium.py human` says which and u
 - **Landing while unavailable:** once the milestone passes verify, open its PR through `/create-pr` without `--ready`. A draft PR is the one push the run makes on its own; the Podium lists every draft PR under Needs you.
 - **Waits for the user either way:** everything else that leaves the machine or can't be undone: merging, marking a PR ready, deleting. Set `needsYou` for it and go on with the work that doesn't depend on it; when none is left, wait for `HUMAN available`.
 - **`HUMAN available`:** run `podium.py prs`, link the draft PRs, and put the open assumptions (`podium.py assumptions`) to the user in `AskUserQuestion` rounds, your choice as the recommended option; the Podium's Confirm and Reverse buttons answer them too (`REQUEST confirm|reverse <n>`). Settle each with `set . assumptions.<n>.status=<confirmed|reversed> --event settled question=… status=…`. A reversal is rework: amend the planning file it touched, and send a story it shaped back to `todo` with the answer in its brief.
+
+## Asana
+
+Read [asana.md](asana.md) on an Asana link, in the arguments or as `REQUEST asana`, and while `podium.json` holds an `asana` link: at sync, when a linked milestone's `phase` changes, when one is planned and when one lands.
 
 ## Dispatcher
 

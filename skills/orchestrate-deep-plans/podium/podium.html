@@ -188,7 +188,7 @@ a.wchip { color: inherit; text-decoration: none; }
 .legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-3); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend svg { overflow: visible; }
-.map-scroll { overflow: auto; padding: 8px 0 24px; }
+.map-scroll { position: relative; z-index: 1; overflow: auto; padding: 8px 0 24px; }
 .map { position: relative; margin: 0 auto; }
 .map svg.edges { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
 .edge { fill: none; stroke: var(--line-2); stroke-width: 1.5; transition: stroke .2s, opacity .2s; }
@@ -196,6 +196,9 @@ a.wchip { color: inherit; text-decoration: none; }
 .edge.overlap { stroke-dasharray: 4 5; }
 .edge.hi { stroke: var(--accent); stroke-width: 2; }
 .map.focus .edge:not(.hi) { opacity: .35; }
+/* wave labels sit in a layer under the scroller: still while it scrolls, covered by passing tiles */
+.map-wrap { position: relative; }
+.waves { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .rowlabel { position: absolute; left: 14px; font-size: 11px; font-weight: 600; color: var(--text-3); letter-spacing: .05em; text-transform: uppercase; }
 
 .node {
@@ -256,6 +259,33 @@ a.wchip { color: inherit; text-decoration: none; }
 .epic-row .btn { margin-left: auto; }
 .node.artifact .title { -webkit-line-clamp: 1; }
 .node.artifact .sid { background: var(--accent-soft); color: var(--accent); }
+
+.banner.digest { background: var(--card); border-color: var(--line); box-shadow: var(--shadow); }
+.banner.digest > .btn { margin-left: auto; }
+.banner.digest .drows { flex-basis: 100%; display: grid; gap: 8px; }
+.banner.digest .drow { display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: baseline; font-size: 13px; }
+.banner.digest .drow .k { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+.banner.digest .dv { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.banner.digest .dv .wchip { box-shadow: none; padding: 3px 10px; }
+.banner.digest .dline { flex-basis: 100%; color: var(--text-2); }
+.banner.digest .dwhy { color: var(--red); font-size: 12px; margin-right: 6px; }
+.bell { flex: none; width: 30px; height: 30px; padding: 0; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--text-3); display: grid; place-items: center; cursor: pointer; }
+.bell:hover { color: var(--text); }
+.bell.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.gitwarn { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; color: var(--amber); background: var(--amber-soft); padding: 4px 10px; border-radius: 999px; white-space: nowrap; cursor: help; }
+.gitwarn[hidden] { display: none; }
+.step .sdur { font-size: 11px; font-weight: 500; color: var(--text-3); margin-left: -2px; }
+.tsum { margin-left: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.tl { display: grid; gap: 6px; }
+.trow { display: grid; grid-template-columns: 110px 1fr 118px; gap: 10px; align-items: center; font-size: 13px; }
+.trow .tv { text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbar { height: 8px; border-radius: 999px; background: var(--gray-soft); overflow: hidden; }
+.tbar i { display: block; height: 100%; border-radius: 999px; background: var(--text-3); }
+.trow.open .tbar i { background: var(--accent); }
+.trow.wave { font-size: 12px; color: var(--text-2); }
+.trow.wave .tk { padding-left: 14px; }
+.trow.wave .tbar { height: 5px; }
+.trow.wave .tbar i { background: var(--green-dot); opacity: .7; }
 
 /* ---------- quality ---------- */
 .quality > summary { list-style: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-weight: 600; }
@@ -430,6 +460,8 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
       <button data-theme-set="light" role="radio">Light</button><button data-theme-set="dark" role="radio">Dark</button><button data-theme-set="system" role="radio">System</button>
     </div>
     <div class="human" id="human" hidden></div>
+    <span class="gitwarn" id="gitwarn" hidden></span>
+    <button class="bell" id="bell" aria-label="Notifications"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
     <span class="live" id="live"><i></i><span>Live</span></span>
     <button class="icon-btn" id="feed-toggle">Activity</button>
   </div>
@@ -456,7 +488,7 @@ a.file:hover, .sec h3 a:hover { color: var(--accent); background: var(--accent-s
         </div>
       </div>
       <div class="page-title" id="page-title"></div>
-      <div class="map-scroll"><div class="map" id="map"></div></div>
+      <div class="map-wrap"><div class="waves" id="waves"></div><div class="map-scroll"><div class="map" id="map"></div></div></div>
     </section>
     <details class="card quality" id="quality">
       <summary>Quality <span class="qsum" id="qsum"></span><span class="chev">›</span></summary>
@@ -509,8 +541,12 @@ function vsc(path, base = "runDir") {
   return "vscode://file" + encodeURI(`${S.info[base]}/${path}`.replace(/\/\.?\//g, "/"));
 }
 fetch("/info", { cache: "no-store" }).then((r) => r.json()).then((i) => { S.info = i; if (S.epic) render(); if (S.selected) renderSheet(); }).catch(() => {});
-/* a poll from a tab in view keeps the server alive; a hidden tab lets it stop when idle */
-const seen = () => ({ "X-Podium-Visible": document.visibilityState === "visible" ? "1" : "0" });
+/* a poll keeps the server alive only while someone is at the tab: in view and touched in the last
+   10 minutes, so a tab left open on an unattended screen lets it stop when idle */
+let lastInput = Date.now();
+["pointermove", "pointerdown", "keydown", "wheel", "focus"].forEach((t) => addEventListener(t, () => (lastInput = Date.now()), { passive: true }));
+const present = () => document.visibilityState === "visible" && Date.now() - lastInput < 10 * 60000;
+const seen = () => ({ "X-Podium-Visible": present() ? "1" : "0" });
 async function getText(path) {
   const r = await fetch(path, { cache: "no-store", headers: seen() });
   if (!r.ok) throw new Error(r.status);
@@ -607,6 +643,11 @@ async function poll() {
       const h = await (await fetch("/human", { cache: "no-store", headers: seen() })).json();
       if (JSON.stringify(h) !== JSON.stringify(S.human)) { S.human = h; renderHuman(); }
     } catch { /* an older server */ }
+    try {
+      const g = await (await fetch("/git", { cache: "no-store" })).json();
+      if (JSON.stringify(g) !== JSON.stringify(S.git)) { S.git = g; renderGit(); }
+    } catch { /* an older server */ }
+    if (markSeen()) changed = true;
     if (changed) render();
   } catch {
     S.online = false;
@@ -710,7 +751,7 @@ function curve(a, b) {
 function render() {
   if (!S.project) return;
   const P = S.project;
-  document.title = `Podium · ${P.project.title}`;
+  renderAttention();
   $("filters").hidden = !S.epic;
   document.querySelector(".legend").hidden = !S.epic;
   if (!S.epic) return renderProject();
@@ -738,7 +779,7 @@ function renderProject() {
   if (!actx) {
     $("stepper").hidden = true;
     const landed = P.epics.reduce((n, E) => n + (E.milestones || []).filter((m) => m.status === "done").length, 0);
-    $("banner").innerHTML = needsBanner() + assumedBanner() + `<div class="banner idle"><span class="label">Idle</span><span class="sub">${P.epics.length} epics · ${landed} milestones landed · open an epic to plan its next milestone</span></div>`;
+    $("banner").innerHTML = needsBanner() + digestBanner() + assumedBanner() + `<div class="banner idle"><span class="label">Idle</span><span class="sub">${P.epics.length} epics · ${landed} milestones landed · open an epic to plan its next milestone</span></div>`;
   }
   $("q").placeholder = "Search epics and milestones";
   setHeading([["", "All epics", null]], "", "", `${P.epics.length} epics · each is a product brief or a theme; open one to see its milestones`);
@@ -800,10 +841,12 @@ function renderStepper() {
   $("stepper").hidden = !m || m.status === "done";
   if ($("stepper").hidden) return;
   const now = PHASES.findIndex(([k]) => k === m.phase);
+  const pt = phaseTimes(m);
   $("stepper").innerHTML = `<span class="step-ms">${esc(m.id)}</span>` + PHASES.map(([k, label], i) => {
     const cls = i < now ? "past" : i === now ? "now" : "";
     const bar = i ? `<span class="step-bar ${i <= now ? "past" : ""}"></span>` : "";
-    return `${bar}<span class="step ${cls}"><span class="dot">${cls === "past" ? "✓" : i + 1}</span>${label}</span>`;
+    const t = cls && pt[k] ? pt[k] : null;
+    return `${bar}<span class="step ${cls}"${t ? ` title="${label}: ${dur(t.ms)}${t.open ? " so far" : ""}"` : ""}><span class="dot">${cls === "past" ? "✓" : i + 1}</span>${label}${t ? `<span class="sdur">${shortDur(t.ms)}</span>` : ""}</span>`;
   }).join("");
   const cur = $("stepper").querySelector(".step.now");
   if (cur) $("stepper").scrollLeft = cur.offsetLeft - $("stepper").clientWidth / 2 + cur.clientWidth / 2;
@@ -831,7 +874,7 @@ function renderBanner() {
     const next = ms.filter((m) => [...UNSTARTED, "todo"].includes(m.status));
     html = `<div class="banner idle"><span class="label">Idle</span><span class="sub">${ms.filter((m) => m.status === "done").length} milestones landed · next: pick one to plan</span><div class="chips">${next.map((m) => `<span class="wchip" data-open="${esc(m.id)}" data-ms=""><b>${esc(m.id)}</b> ${esc(m.title)} <span class="cycle">· ${esc(m.status)}</span></span>`).join("")}</div></div>`;
   }
-  $("banner").innerHTML = needsBanner() + assumedBanner() + html;
+  $("banner").innerHTML = needsBanner() + digestBanner() + assumedBanner() + html;
 }
 /* every draft PR in the project: the orchestrator opens PRs as drafts, and marking one ready is the user's call */
 function draftPrs() {
@@ -976,12 +1019,13 @@ function renderMap() {
   m.style.width = L.width + "px";
   m.style.height = L.height + "px";
   m.classList.toggle("focus", !!S.selected && S.selected !== "__root");
-  const labels = kind === "story" ? Array.from({ length: L.rows }, (_, i) => `<span class="rowlabel" style="top:${PAD / 2 + EPIC_H + GY + i * (H + GY) - 22}px">Wave ${i + 1}</span>`).join("") : "";
   const box = m.parentElement;
   const fit = Math.min(1, Math.max(0.75, (box.clientWidth - 8) / L.width));
   m.style.zoom = fit;
+  // map y scaled by the zoom, below the scroller's 8px top padding
+  $("waves").innerHTML = kind === "story" ? Array.from({ length: L.rows }, (_, i) => `<span class="rowlabel" style="top:${8 + (PAD / 2 + EPIC_H + GY + i * (H + GY) - 22) * fit}px">Wave ${i + 1}</span>`).join("") : "";
   const node = kind === "milestone" ? milestoneNode : kind === "story" ? storyNode : artifactNode;
-  m.innerHTML = `<svg class="edges" width="${L.width}" height="${L.height}">${edges.join("")}</svg>${labels}${vm ? milestoneRoot(L.pos.__root, vm) : epicRoot(L.pos.__root)}${list.map((s) => node(s, L.pos[s.id], map)).join("")}`;
+  m.innerHTML = `<svg class="edges" width="${L.width}" height="${L.height}">${edges.join("")}</svg>${vm ? milestoneRoot(L.pos.__root, vm) : epicRoot(L.pos.__root)}${list.map((s) => node(s, L.pos[s.id], map)).join("")}`;
   if (S.centeredFor !== S.view && box.scrollWidth > box.clientWidth) { box.scrollLeft = (box.scrollWidth - box.clientWidth) / 2; }
   S.centeredFor = S.view;
   applyFilter();
@@ -1181,6 +1225,133 @@ function renderEvents() {
   }).join("") || `<li class="muted" style="padding:8px">${f === "all" ? "Nothing yet" : "Nothing here yet"}</li>`;
 }
 
+/* ---------- while you were away ---------- */
+// What moved since the user last had the Podium in view. Asks, draft PRs and decisions have
+// their own banners, so the digest leaves them out.
+const AWAY_MS = 30 * 60000;
+const DIGEST_SKIP = new Set(["assumed", "settled", "needs", "human", "request", "commit", "status", "note"]);
+const seenKey = () => `podium-seen:${S.project?.project?.title || location.port}`;
+/* stamp the visit; true when this visit follows an absence, which opens the digest */
+function markSeen() {
+  if (document.visibilityState !== "visible" || !S.project) return false;
+  const k = seenKey(), prev = Number(localStorage.getItem(k) || 0), now = Date.now();
+  localStorage.setItem(k, String(now));
+  if (prev && now - prev > AWAY_MS && S.digestSince == null) { S.digestSince = prev; return true; }
+  return false;
+}
+function digestBanner() {
+  if (S.digestSince == null) return "";
+  const ev = S.events.filter((e) => Date.parse(e.at) > S.digestSince && !DIGEST_SKIP.has(e.type) && !(e.type === "pr" && e.state === "draft"));
+  const of = (...t) => ev.filter((e) => t.includes(e.type));
+  const id = (e) => `${e.milestone || ""}/${e.story}`;
+  const uniq = (list) => [...new Map(list.filter((e) => e.story).map((e) => [id(e), e])).values()];
+  const story = (e) => `<span class="wchip" data-open="${esc(e.story)}" data-ms="${esc(e.milestone || "")}"><b>${multiMs() && e.milestone ? `${esc(e.milestone)} · ` : ""}${esc(e.story)}</b></span>`;
+  const ended = new Set(of("merged", "failed").map(id));
+  // one chip per milestone: where it got to
+  const moves = [...new Map(of("planned", "phase", "landed").map((e) => [e.milestone, e])).values()];
+  const shown = ["merged", "failed", "dispatched", "planned", "phase", "landed", "pr"];
+  const rows = [
+    ["Merged", uniq(of("merged")).map(story).join("")],
+    ["Failed", uniq(of("failed")).map((e) => `${story(e)}<span class="dwhy">${esc(e.reason || "")}</span>`).join("")],
+    ["Started", uniq(of("dispatched")).filter((e) => !ended.has(id(e))).map(story).join("")],
+    ["Milestones", moves.map((e) => `<span class="wchip" data-drill="${esc(e.milestone || "")}"><b>${esc(e.milestone || "")}</b> ${e.type === "phase" ? `→ ${esc(phaseLabel(e.phase))}` : e.type === "landed" ? "landed" : "planning started"}</span>`).join("")],
+    ["PRs", of("pr").map((e) => `<a class="wchip" href="${esc(e.url || "")}" target="_blank" rel="noopener"><b>${esc(e.milestone || "")}</b> #${esc(e.number)} ${esc(e.state || "")} ↗</a>`).join("")],
+    ["Other", ev.filter((e) => !shown.includes(e.type)).map((e) => `<div class="dline">${(EV[e.type] || [0, 0, () => esc(e.text || e.type)])[2](e)}</div>`).join("")],
+  ].filter(([, html]) => html);
+  if (!rows.length) return "";
+  return `<div class="banner digest"><span class="label">While you were away</span><span class="sub">since ${esc(when(new Date(S.digestSince).toISOString()))}</span><button class="btn ghost" data-digest-done>Got it</button><div class="drows">${rows.map(([k, html]) => `<div class="drow"><span class="k">${k}</span><div class="dv">${html}</div></div>`).join("")}</div></div>`;
+}
+
+/* ---------- attention: tab title, icon dot, notifications ---------- */
+/* everything waiting on the user: [key, line, colour] */
+function attention() {
+  const P = S.project, out = [];
+  if (!P) return out;
+  if (P.needsYou) out.push([`needs:${P.needsYou.reason}`, `Needs you: ${P.needsYou.reason}`, "amber"]);
+  draftPrs().forEach((pr) => out.push([`pr:${pr.ms}:${pr.repo || ""}:${pr.number}`, `${pr.ms} draft PR #${pr.number} to review`, "amber"]));
+  (P.assumptions || []).forEach((a, i) => { if (a.status === "open" && !S.settling?.[String(i)]) out.push([`a:${i}`, `A${i} to settle: ${a.short || a.question}`, "amber"]); });
+  P.epics.forEach((E) => (E.milestones || []).forEach((m) => (m.stories || []).forEach((s) => {
+    if (s.status === "failed") out.push([`f:${m.id}/${s.id}`, `${m.id} · ${s.id} failed`, "red"]);
+    if (s.status === "approval") out.push([`p:${m.id}/${s.id}`, `${m.id} · ${s.id} waits for approval`, "amber"]);
+  })));
+  return out;
+}
+/* the favicon is the header logo, so the two never drift; a dot when something waits on the user */
+function setFavicon(dot) {
+  const svg = $("logo").outerHTML.replace(/<\/svg>\s*$/, `${dot ? `<circle cx="52" cy="12" r="11" fill="${dot}" stroke="#fff" stroke-width="3"/>` : ""}</svg>`);
+  $("favicon").href = "data:image/svg+xml," + encodeURIComponent(svg);
+}
+const NOTIFY_KEY = "podium-notify";
+const notifyOn = () => localStorage.getItem(NOTIFY_KEY) === "1" && "Notification" in window && Notification.permission === "granted";
+function renderAttention() {
+  const items = attention(), n = items.length;
+  document.title = `${n ? `(${n}) ` : ""}Podium · ${S.project.project.title}`;
+  const dot = items.some((x) => x[2] === "red") ? "#ff3b30" : n ? "#ff9f0a" : "";
+  if (dot !== S.dot) { S.dot = dot; setFavicon(dot); }
+  // notify only about what is new since the last render, and only while the tab is out of view
+  if (S.attnKeys && notifyOn() && document.visibilityState !== "visible") {
+    const fresh = items.filter((x) => !S.attnKeys.has(x[0]));
+    if (fresh.length) new Notification(`Podium · ${S.project.project.title}`, { body: fresh.map((x) => x[1]).join("\n"), tag: "podium" });
+  }
+  S.attnKeys = new Set(items.map((x) => x[0]));
+  $("bell").classList.toggle("on", notifyOn());
+  $("bell").title = notifyOn() ? "Notifications on: you get one when something new needs you while this tab is in the background. Click to turn off." : "Notify me when something needs you while this tab is in the background";
+}
+
+/* ---------- timeline ---------- */
+/* time spent in each phase of milestone m, from its phase events (a phase entered twice adds up) */
+function phaseTimes(m) {
+  const evs = S.events.filter((e) => e.milestone === m.id && ["planned", "phase", "landed"].includes(e.type))
+    .map((e) => ({ ...e, t: Date.parse(e.at) })).filter((e) => !isNaN(e.t)).sort((a, b) => a.t - b.t);
+  const out = {};
+  evs.forEach((e, i) => {
+    const p = e.type === "phase" ? e.phase : e.type === "planned" && !evs.some((x) => x.phase === "recon") ? "recon" : null;
+    if (!p) return;
+    const next = evs[i + 1];
+    const end = next ? next.t : m.status === "done" ? null : Date.now();
+    if (end == null) return;
+    const o = (out[p] ||= { ms: 0, start: e.t, open: false });
+    o.ms += end - e.t;
+    o.open = !next;
+  });
+  return out;
+}
+/* each build wave's span, from its stories' start and finish */
+function waveTimes(m) {
+  const st = m.stories || [], by = Object.fromEntries(st.map((s) => [s.id, s])), depth = {};
+  const d = (s) => (depth[s.id] ??= 1 + Math.max(0, ...[...(s.deps || []), ...(s.overlapAfter || [])].filter((x) => by[x]).map((x) => d(by[x]))));
+  const waves = [];
+  st.forEach((s) => {
+    if (!s.startedAt) return;
+    const a = Date.parse(s.startedAt), b = s.finishedAt ? Date.parse(s.finishedAt) : Date.now(), w = d(s) - 1;
+    const o = (waves[w] ||= { start: a, end: b, n: 0, open: false });
+    o.start = Math.min(o.start, a); o.end = Math.max(o.end, b); o.n++; o.open ||= !s.finishedAt;
+  });
+  return waves;
+}
+const shortDur = (ms) => { const m = Math.round(ms / 60000); return m < 1 ? "<1m" : m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}`; };
+function timelineSec(m) {
+  const pt = phaseTimes(m), wv = waveTimes(m);
+  const rows = PHASES.filter(([k]) => pt[k]).map(([k, label]) => ({ k, label, ...pt[k] }));
+  if (!rows.length) return "";
+  // scaled to the finished phases, so a phase still waiting (on the user, say) doesn't flatten the rest; it fills the bar
+  const done = [...rows.filter((r) => !r.open).map((r) => r.ms), ...wv.filter((w) => w && !w.open).map((w) => w.end - w.start)];
+  const max = Math.max(1, ...(done.length ? done : rows.map((r) => r.ms)));
+  const row = (label, ms, open, cls = "") => `<div class="trow ${cls} ${open ? "open" : ""}"><span class="tk">${label}</span><span class="tbar"><i style="width:${Math.min(100, Math.max(1.5, (ms / max) * 100))}%"></i></span><span class="tv">${dur(ms)}${open ? " so far" : ""}</span></div>`;
+  const total = rows.reduce((n, r) => n + r.ms, 0);
+  return `<div class="sec"><h3>Timeline<span class="muted tsum">${dur(total)} in all</span></h3><div class="tl">${rows.map((r) =>
+    row(esc(r.label), r.ms, r.open) + (r.k === "build" ? wv.map((w, i) => (w ? row(`Wave ${i + 1} <span class="muted">· ${w.n}</span>`, w.end - w.start, w.open, "wave") : "")).join("") : "")).join("")}</div></div>`;
+}
+
+/* ---------- git: a run that moved on another machine ---------- */
+function renderGit() {
+  const repos = S.git?.repos || [], bad = repos.filter((r) => r.behind || r.baseBehind), el = $("gitwarn");
+  el.hidden = !bad.length;
+  if (!bad.length) return;
+  el.textContent = "⚠ " + bad.map((r) => `${repos.length > 1 ? `${r.name}: ` : ""}${[r.behind && `${r.branch} ${r.behind}`, r.baseBehind && `${r.base} ${r.baseBehind}`].filter(Boolean).join(", ")}`).join(" · ") + " behind origin";
+  el.title = `Fetched ${clock(S.git.at)}. Work landed from another machine: pull before resuming the run, and check podium.json against what landed there.`;
+}
+
 /* ---------- navigation ---------- */
 /* make the epic holding milestone `ms` the one in view; `ms` "" means the epic's milestone map */
 function enterEpicOf(ms) {
@@ -1287,6 +1458,7 @@ function milestoneSheet(m) {
       ${stories.length ? `<dt>Stories</dt><dd>${stories.filter((s) => s.status === "done").length} of ${stories.length} ${m.status === "done" ? "done" : "merged to branch"}</dd>` : ""}
       ${q ? `<dt>Quality gate</dt><dd>${q.findings} findings · ${q.fixed} fixed · ${q.skipped} skipped${q.note ? `<div class="muted">${esc(q.note)}</div>` : ""}</dd>` : ""}
     </dl></div>
+    ${timelineSec(m)}
     ${(m.covers || []).length ? `<div class="sec"><h3>Covers brief items</h3><div class="links">${m.covers.map((c) => `<span class="link-chip">${esc(c)}</span>`).join("")}</div></div>` : ""}
     <div class="sec"><h3>Dependencies</h3><dl class="kv"><dt>Depends on</dt><dd><div class="links">${(m.deps || []).map((x) => chip(x, map)).join("") || `<span class="muted">Nothing</span>`}</div></dd><dt>Unblocks</dt><dd><div class="links">${blocks.map((x) => chip(x.id, map)).join("") || `<span class="muted">Nothing</span>`}</div></dd></dl></div>
     ${(m.open || []).length ? `<div class="sec"><h3>Open questions</h3><ul class="md">${m.open.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
@@ -1307,7 +1479,7 @@ function epicSheet() {
 /* a section heading's icon, by what the section is about (brief, spec and sheet headings) */
 const HEAD_ICONS = [["goal", "🎯"], ["objective", "🎯"], ["acceptance", "✅"], ["success criteria", "🏆"], ["files in scope", "📁"], ["files", "📁"],
   ["context", "🧭"], ["depends on", "🔗"], ["dependencies", "🔗"], ["contract", "📜"], ["done when", "🏁"], ["brief items", "📌"], ["covers", "📌"],
-  ["brief", "📝"], ["document", "📄"], ["run", "⚙️"], ["progress", "⏱️"], ["commits", "🔀"], ["tasks", "🗂️"], ["open questions", "❓"],
+  ["brief", "📝"], ["document", "📄"], ["run", "⚙️"], ["progress", "⏱️"], ["timeline", "🗓️"], ["commits", "🔀"], ["tasks", "🗂️"], ["open questions", "❓"],
   ["unknowns", "❓"], ["milestones", "🗺️"], ["decisions", "⚖️"], ["constraints", "🚧"], ["non-goals", "🚫"], ["risks", "⚠️"],
   ["danger", "⚠️"], ["requirements", "📋"], ["edge cases", "🧩"], ["user scenarios", "👤"], ["user story", "👤"], ["reuse", "♻️"],
   ["budget", "💰"], ["data sources", "🛰️"], ["module", "🧱"], ["shape", "🧱"], ["seams", "🧵"], ["story graph", "🕸️"], ["quality gate", "🛡️"]];
@@ -1350,7 +1522,7 @@ function when(iso) {
   if (m < 1440) return `${clock(iso)} · ${m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`}`;
   return d.toLocaleDateString([], { day: "numeric", month: "short" }) + ` · ${clock(iso)}`;
 }
-function dur(ms) { const m = Math.max(0, Math.round(ms / 60000)); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; }
+function dur(ms) { const m = Math.max(0, Math.round(ms / 60000)); return m < 1 ? "<1 min" : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; }
 
 /* ---------- actions ---------- */
 const NO_ORCHESTRATOR = () => `No orchestrator is watching — run /${S.info?.skill || "orchestrate-plan"} in an agent chat, then click again`;
@@ -1416,6 +1588,7 @@ document.addEventListener("click", (ev) => {
   if (a) { ev.stopPropagation(); if (!a.disabled) act(a.dataset.act, a.dataset.id); return; }
   const f = ev.target.closest("[data-filter]");
   if (f) { S.filter = f.dataset.filter; renderFilters(); applyFilter(); return; }
+  if (ev.target.closest("[data-digest-done]")) { S.digestSince = null; render(); return; }
   if (ev.target.closest("[data-epics]")) { setEpic(null); return; }
   const ec = ev.target.closest("[data-epic]");
   if (ec) { setEpic(ec.dataset.epic); return; }
@@ -1449,6 +1622,14 @@ $("scrim").addEventListener("click", closeSheet);
 $("sheet-close").addEventListener("click", closeSheet);
 $("feed-toggle").addEventListener("click", () => $("feed").classList.toggle("on"));
 $("feed-close").addEventListener("click", () => $("feed").classList.remove("on"));
+$("bell").addEventListener("click", async () => {
+  if (localStorage.getItem(NOTIFY_KEY) === "1") { localStorage.removeItem(NOTIFY_KEY); toast("Notifications off"); }
+  else if (!("Notification" in window)) toast("This browser can't show notifications");
+  else if ((await Notification.requestPermission()) === "granted") { localStorage.setItem(NOTIFY_KEY, "1"); toast("You'll get a notification when something new needs you and this tab is in the background"); }
+  else toast("Notifications are blocked for this page in the browser's settings");
+  if (S.project) renderAttention();
+});
+document.addEventListener("visibilitychange", () => { if (markSeen()) render(); });
 $("feed-filter").addEventListener("click", (ev) => {
   const b = ev.target.closest("[data-feed]");
   if (b) { S.feedFilter = b.dataset.feed; renderEvents(); $("events").scrollTop = 0; }
@@ -1456,8 +1637,7 @@ $("feed-filter").addEventListener("click", (ev) => {
 window.addEventListener("resize", () => { if (S.epic) renderMap(); });
 $("quality").addEventListener("toggle", () => (S.qualityTouched = true), { once: true });
 
-/* the favicon is the header logo, so the two never drift */
-$("favicon").href = "data:image/svg+xml," + encodeURIComponent($("logo").outerHTML);
+setFavicon("");
 poll();
 setInterval(poll, POLL_MS);
 setInterval(() => { if (S.events.length) renderEvents(); }, 60000);

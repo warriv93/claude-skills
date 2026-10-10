@@ -26,12 +26,17 @@ POST /human/<available|unavailable|auto>[?until=HH:MM]. GET /human returns
 podium.py's reading of the user's availability.
 
 It stops itself after --idle minutes (default 60, 0 = never) without
-activity: a Podium tab in view (its polls carry X-Podium-Visible), a button,
+activity: a Podium tab in view and used in the last 10 minutes (its polls carry X-Podium-Visible), a button,
 or a change to podium.json, events.jsonl or a story's progress file.
 --detach binds the port, prints the URL and returns, leaving the server
 running in the background with its output in server.log in the podium dir.
 
-    python3 server.py [--dir .deep-plan] [--port 8765] [--idle 60] [--detach]
+GET /git says, per repo the run works in (its own, plus the active milestone's
+`repos`), how far the checkout's branch and the default branch are behind
+origin, refreshed by a `git fetch` every --git-every minutes (default 5,
+0 = never): a run that moved on another machine shows in the Podium.
+
+    python3 server.py [--dir .deep-plan] [--port 8765] [--idle 60] [--detach] [--git-every 5]
 """
 import argparse
 import glob
@@ -42,6 +47,7 @@ import json
 import os
 import re
 import socket
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -134,8 +140,52 @@ def handoffs(root):
         return {}
 
 
+# Each repo's distance from origin, refreshed by watch_git; GET /git serves it.
+GIT = {"repos": [], "at": None}
+
+
+def git(repo, *args, timeout=30):
+    """A git command's output, or None when it fails or hangs (a fetch never prompts for credentials)."""
+    try:
+        r = subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True, timeout=timeout,
+                           env={**os.environ, "GIT_TERMINAL_PROMPT": "0"})
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def repos_of(root):
+    """{name: path} for the run's own repo and the active milestone's `repos`."""
+    out, repo = {}, os.path.dirname(root)
+    if git(repo, "rev-parse", "--git-dir"):
+        out[os.path.basename(repo)] = repo
+    _, active = load_run(root)
+    for name, r in ((active or {}).get("repos") or {}).items():
+        if (r or {}).get("path"):
+            out[name] = os.path.expanduser(r["path"])
+    return out
+
+
+def repo_state(name, path):
+    git(path, "fetch", "--quiet", "--no-tags", timeout=60)
+    branch = git(path, "rev-parse", "--abbrev-ref", "HEAD")
+    lr = git(path, "rev-list", "--left-right", "--count", "HEAD...@{u}")
+    ahead, behind = map(int, lr.split()) if lr else (0, 0)
+    base = (git(path, "symbolic-ref", "--short", "refs/remotes/origin/HEAD") or "origin/main").split("/", 1)[-1]
+    base_behind = git(path, "rev-list", "--count", f"{base}..origin/{base}") if base != branch else None
+    return {"name": name, "branch": branch, "ahead": ahead, "behind": behind, "base": base,
+            "baseBehind": int(base_behind) if base_behind else 0}
+
+
+def watch_git(root, minutes):
+    while True:
+        GIT["repos"] = [repo_state(n, p) for n, p in repos_of(root).items()]
+        GIT["at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        time.sleep(minutes * 60)
+
+
 # The last time someone used the Podium; the idle check reads it.
-SEEN = {"at": time.time()}
+SEEN = {"at": time.time(), "by": "start"}
 
 
 def last_activity(root):
@@ -163,7 +213,7 @@ def make_handler(root):
         def parse_request(self):
             ok = super().parse_request()
             if ok and (self.command != "GET" or self.headers.get("X-Podium-Visible") == "1"):
-                SEEN["at"] = time.time()
+                SEEN.update(at=time.time(), by=f"{self.command} {self.path.split('?')[0]} from {self.headers.get('User-Agent', '?')[:60]}")
             return ok
 
         def log_message(self, *_):
@@ -175,7 +225,10 @@ def make_handler(root):
 
         def do_GET(self):
             if self.path == "/info":
-                return self.reply(200, {"runDir": root, "repoDir": os.path.dirname(root), "watching": watching(root), "skill": SKILL, "paseoServer": paseo_server()})
+                return self.reply(200, {"runDir": root, "repoDir": os.path.dirname(root), "watching": watching(root), "skill": SKILL, "paseoServer": paseo_server(),
+                                        "lastUse": {"ago": round(time.time() - SEEN["at"]), "by": SEEN["by"]}})
+            if self.path == "/git":
+                return self.reply(200, GIT)
             if self.path.startswith("/prompt/"):
                 return self.prompt(*([p for p in self.path.split("/") if p][1:] + [None, None])[:2])
             if self.path == "/human":
@@ -355,6 +408,7 @@ def main():
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--idle", type=float, default=60, help="minutes without activity before stopping; 0 = never")
     ap.add_argument("--detach", action="store_true", help="print the URL, then keep serving in the background")
+    ap.add_argument("--git-every", type=float, default=5, help="minutes between fetches for GET /git; 0 = never")
     args = ap.parse_args()
     root = os.path.abspath(args.dir)
     port = free_port(args.port)
@@ -369,6 +423,8 @@ def main():
         os.dup2(log.fileno(), sys.stderr.fileno())
         os.dup2(os.open(os.devnull, os.O_RDONLY), sys.stdin.fileno())
         print(f"{datetime.now():%H:%M} serving http://127.0.0.1:{port}/", flush=True)
+    if args.git_every > 0:
+        threading.Thread(target=watch_git, args=(root, args.git_every), daemon=True).start()
     if args.idle > 0:
         threading.Thread(target=stop_when_idle, args=(server, root, args.idle), daemon=True).start()
     server.serve_forever()
